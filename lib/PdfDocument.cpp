@@ -49,7 +49,7 @@ void PdfDocument::loadPdf() {
 	mPdfDoc->setRenderHint( Poppler::Document::TextAntialiasing );
 	mPdfDoc->setRenderHint( Poppler::Document::TextHinting );
 
-	mPdfDoc->setRenderBackend( Poppler::Document::SplashBackend );
+	mPdfDoc->setRenderBackend( Poppler::Document::ArthurBackend );
 
 	for( int i = 0; i < mPdfDoc->numPages(); i++ ) {
 		PdfPage *p = mPdfDoc->page( i );
