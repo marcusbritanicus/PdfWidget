@@ -1,4 +1,4 @@
-# NewBreeze
+# PdfWidget
 ## A nascent PDF view written based on Qt and Poppler
 
 ### Qt4 and Qt5 builds are supported
