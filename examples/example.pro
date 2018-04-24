@@ -29,10 +29,6 @@ greaterThan( QT_MAJOR_VERSION, 4 ) {
 # Silent Compilation
 CONFIG += silent
 
-isEmpty(BUILD_DIR) {
-	BUILD_DIR = "build"
-}
-
 MOC_DIR 	= $$(BUILD_DIR)/PdfWidget/moc
 OBJECTS_DIR = $$(BUILD_DIR)/PdfWidget/obj
 RCC_DIR		= $$(BUILD_DIR)/PdfWidget/qrc
