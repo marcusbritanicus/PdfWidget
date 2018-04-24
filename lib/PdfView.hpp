@@ -15,7 +15,7 @@
 
 #include "PdfDocument.hpp"
 
-class PdfView : public QAbstractScrollArea {
+class PdfView : public QScrollArea {
 	Q_OBJECT
 
 	public:
@@ -26,13 +26,18 @@ class PdfView : public QAbstractScrollArea {
 		void load( QString pdfPath );
 		QString pageText( int );
 
+		qreal zoom();
+		void setZoom( qreal );
+
 	private:
 		PdfDocument *PdfDoc;
 		QHash<int, QImage> renderedImages;
 		QHash<int, QRect> pageRects;
 
 		int currentPage;
-		QScrollBar *vScroll;
+		qreal mZoom;
+
+		void basicInit();
 
 		void getCurrentPage();
 		void lookAround();
@@ -44,8 +49,21 @@ class PdfView : public QAbstractScrollArea {
 		void paintRect( int );
 
 	public Q_SLOTS:
-		void slotZoomIn() {};
-		void slotZoomOut() {};
+		void slotZoomIn() {
+
+			if ( mZoom >= 4.0 )
+				return;
+
+			setZoom( mZoom + 0.25 );
+		};
+
+		void slotZoomOut() {
+
+			if ( mZoom <= 0.25 )
+				return;
+
+			setZoom( mZoom - 0.25 );
+		};
 
 	protected:
 		void paintEvent( QPaintEvent *pEvent );

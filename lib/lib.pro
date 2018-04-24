@@ -3,12 +3,11 @@ VERSION = 0.0.1
 
 INCLUDEPATH += .
 
-# Input
+# Pdf Library
 HEADERS += PdfDocument.hpp PdfView.hpp PdfPrinter.hpp
 SOURCES += PdfDocument.cpp PdfView.cpp PdfPrinter.cpp
 
 # Qt4
-# ===
 lessThan( QT_MAJOR_VERSION, 5 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt4
 	LIBS         += -L/usr/lib -lpoppler-qt4
@@ -16,7 +15,6 @@ lessThan( QT_MAJOR_VERSION, 5 ) {
 }
 
 # Qt5
-# ===
 greaterThan( QT_MAJOR_VERSION, 4 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt5
 	LIBS         += -L/usr/lib -lpoppler-qt5
@@ -26,6 +24,9 @@ greaterThan( QT_MAJOR_VERSION, 4 ) {
 
 # Silent Compilation
 CONFIG += silent
+
+# Build Shared and Static
+CONFIG += shared_and_static build_all
 
 isEmpty(BUILD_DIR) {
 	BUILD_DIR = "build"

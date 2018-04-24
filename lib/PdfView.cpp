@@ -6,40 +6,14 @@
 
 #include "PdfView.hpp"
 
-PdfView::PdfView( QWidget *parent ) : QAbstractScrollArea( parent ) {
+PdfView::PdfView( QWidget *parent ) : QScrollArea( parent ) {
 
-	vScroll = new QScrollBar( Qt::Vertical, this );
-	vScroll->setRange( 0, 0 );
-	vScroll->setFixedWidth( 12 );
-	vScroll->setPageStep( height() / 4 * 3 );
-	vScroll->setSingleStep( 30 );
-
-	setVerticalScrollBar( vScroll );
-
-	setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-	setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
-
-	connect( vScroll, SIGNAL( valueChanged( int ) ), this, SLOT( repaint() ) );
-
-	setMinimumSize( QSize( 640, 480 ) );
-
-	currentPage = -1;
+	basicInit();
 };
 
-PdfView::PdfView( QString pdfPath, QWidget *parent ) : QAbstractScrollArea( parent ) {
+PdfView::PdfView( QString pdfPath, QWidget *parent ) : QScrollArea( parent ) {
 
-	vScroll = new QScrollBar( Qt::Vertical, this );
-	vScroll->setRange( 0, 0 );
-	vScroll->setFixedWidth( 12 );
-
-	setVerticalScrollBar( vScroll );
-
-	setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-	setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
-
-	connect( vScroll, SIGNAL( valueChanged( int ) ), this, SLOT( repaint() ) );
-
-	setMinimumSize( QSize( 640, 480 ) );
+	basicInit();
 
 	setPdfDocument( new PdfDocument( pdfPath ) );
 };
@@ -51,7 +25,6 @@ void PdfView::setPdfDocument( PdfDocument *Pdf ) {
 		currentPage = 0;
 
 	reshapeView();
-
 	lookAround();
 };
 
@@ -60,9 +33,51 @@ void PdfView::load( QString pdfPath ) {
 	setPdfDocument( new PdfDocument( pdfPath ) );
 };
 
+qreal PdfView::zoom() {
+
+	return mZoom;
+};
+
+void PdfView::setZoom( qreal zoom ) {
+
+	mZoom = zoom;
+
+	renderedImages.clear();
+	pageRects.clear();
+
+	reshapeView();
+	lookAround();
+
+	repaint();
+};
+
 QString PdfView::pageText( int pageNo ) {
 
 	return PdfDoc->page( pageNo )->text( QRectF() );
+};
+
+void PdfView::basicInit() {
+
+	setWidgetResizable( true );
+	setWidget( new QWidget() );
+
+	setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+	setHorizontalScrollBarPolicy( Qt::ScrollBarAsNeeded );
+
+	setMinimumSize( QSize( 640, 480 ) );
+
+	currentPage = -1;
+	mZoom = 1.0;
+
+	QAction *zoomInAct = new QAction( this );
+	zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
+	connect( zoomInAct, SIGNAL( triggered() ), this, SLOT( slotZoomIn() ) );
+	addAction( zoomInAct );
+
+	QAction *zoomOutAct = new QAction( this );
+	zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
+	connect( zoomOutAct, SIGNAL( triggered() ), this, SLOT( slotZoomOut() ) );
+	addAction( zoomOutAct );
 };
 
 void PdfView::reshapeView() {
@@ -71,29 +86,27 @@ void PdfView::reshapeView() {
 	renderedImages.clear();
 
 	int minHeight = 10;
-	int viewWidth = viewport()->width() - vScroll->width();
+	int viewWidth = viewport()->width() - verticalScrollBar()->width();
 
-	vScroll->setPageStep( height() / 4 * 3 );
-	vScroll->setSingleStep( 30 );
+	verticalScrollBar()->setPageStep( height() / 4 * 3 );
+	verticalScrollBar()->setSingleStep( 30 );
 
 	for( int i = 0; i < PdfDoc->pages(); i++ ) {
 		QSize pageSize = PdfDoc->page( i )->pageSize();
-		pageRects[ i ] = QRect( 0, minHeight, viewWidth, 1.0 * viewWidth * pageSize.height() / pageSize.width() );
+		pageRects[ i ] = QRect( 0, minHeight, viewWidth * mZoom, mZoom * viewWidth * pageSize.height() / pageSize.width() );
 
-		minHeight += ( int )( 1.0 * viewWidth * pageSize.height() / pageSize.width() );
+		minHeight += ( int )( mZoom * viewWidth * pageSize.height() / pageSize.width() );
 		minHeight += 5;
 	}
 
-	viewport()->setFixedHeight( minHeight );
-	vScroll->setMaximum( minHeight );
-
-	repaint();
+	widget()->setFixedSize( mZoom * viewWidth, minHeight );
+	viewport()->update();
 };
 
 float PdfView::getResolution( int pageNo ) {
 
-	int viewWidth = viewport()->width() - vScroll->width();
-	return viewWidth * 72 / PdfDoc->page( pageNo )->pageSize().width();
+	int viewWidth = viewport()->width() - verticalScrollBar()->width();
+	return viewWidth * 72 / PdfDoc->page( pageNo )->pageSize().width() * mZoom;
 };
 
 void PdfView::getCurrentPage() {
@@ -102,8 +115,8 @@ void PdfView::getCurrentPage() {
 	if ( PdfDoc->pages() <= 0 )
 		return;
 
-	int viewWidth = viewport()->width() - vScroll->width();
-	int h = vScroll->value();
+	int viewWidth = viewport()->width() - verticalScrollBar()->width();
+	int h = verticalScrollBar()->value();
 
 	/* Set the current page */
 	for( int i = 0; i < PdfDoc->pages(); i++ ) {
@@ -160,11 +173,12 @@ void PdfView::paintEvent( QPaintEvent *pEvent ) {
 
 	/* Get the current page */
 	getCurrentPage();
-	/* Vertical Scroll Bar Position */
-	int h = vScroll->value();
+	/* ScrollBar Positions */
+	int h = verticalScrollBar()->value();
+	int w = horizontalScrollBar()->value();
 
 	/* Start drawing the current page from where it starts */
-	painter.translate( 5, -h );
+	painter.translate( -w, -h );
 	painter.drawImage( pageRects[ currentPage ], renderedImages[ currentPage ] );
 
 	/* If the  */
@@ -192,12 +206,14 @@ void PdfView::resizeEvent( QResizeEvent *rEvent ) {
 
 void PdfView::wheelEvent( QWheelEvent *wEvent ) {
 
-	int cPos = vScroll->value();
+	QScrollArea::wheelEvent( wEvent );
 
-	int numDegrees = -wEvent->delta() / 8;
-	vScroll->setValue( cPos + numDegrees * vScroll->singleStep() );
+	// int cPos = verticalScrollBar()->value();
 
-	wEvent->accept();
+	// int numDegrees = -wEvent->delta() / 8;
+	// verticalScrollBar()->setValue( cPos + numDegrees * vScroll->singleStep() );
 
-	viewport()->repaint();
+	// wEvent->accept();
+
+	// viewport()->repaint();
 };
