@@ -34,6 +34,9 @@ class PdfDocument : public QObject {
 		int pages() const;
 		PdfPage *page( int pageNum ) const;
 
+		QString pageText( int pageNo ) const;
+		QString text( QRect ) const;
+
 	private:
 		Poppler::Document *mPdfDoc;
 		bool mDocumentLoaded;

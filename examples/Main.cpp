@@ -27,8 +27,7 @@
 
 // Local Headers
 #include "PdfDocument.hpp"
-#include "PdfView.hpp"
-#include "PdfPrinter.hpp"
+#include "PdfView.hh"
 
 int main( int argc, char **argv ) {
 
@@ -38,6 +37,17 @@ int main( int argc, char **argv ) {
 
 	PdfView *view = new PdfView( NULL );
 	view->setPdfDocument( Pdf );
+
+	QAction *zoomInAct = new QAction( view );
+	zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
+	QObject::connect( zoomInAct, SIGNAL( triggered() ), view, SLOT( slotZoomIn() ) );
+	// addAction( zoomInAct );
+
+	QAction *zoomOutAct = new QAction( view );
+	zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
+	QObject::connect( zoomOutAct, SIGNAL( triggered() ), view, SLOT( slotZoomOut() ) );
+	// addAction( zoomOutAct );
+
 	view->showMaximized();
 
 	return app.exec();

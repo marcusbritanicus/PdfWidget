@@ -1,6 +1,12 @@
 # PdfWidget
 ## A nascent PDF view written based on Qt and Poppler
 
+This library currently has very minimal features.
+The only thing it currently does properly is render the pages, and zoom in and zoom out.
+
+In the subsequent commits, I plan to enable encryption check, better rendering of pages
+when zoomed out to less than page width, proper page rectangles and so on.
+
 ### Qt4 and Qt5 builds are supported
 
 ### Notes for compiling - linux:

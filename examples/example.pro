@@ -8,8 +8,8 @@ DEPENDPATH += . ../lib/
 SOURCES += Main.cpp
 
 # Input
-HEADERS += ../lib/PdfDocument.hpp ../lib/PdfView.hpp ../lib/PdfPrinter.hpp
-SOURCES += ../lib/PdfDocument.cpp ../lib/PdfView.cpp ../lib/PdfPrinter.cpp
+HEADERS += ../lib/PdfDocument.hpp ../lib/PdfView.hpp
+SOURCES += ../lib/PdfDocument.cpp ../lib/PdfView.cpp
 
 # Qt4
 lessThan( QT_MAJOR_VERSION, 5 ) {

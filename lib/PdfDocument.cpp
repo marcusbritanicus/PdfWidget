@@ -42,6 +42,11 @@ PdfPage* PdfDocument::page( int pageNum ) const {
 	return mPages.at( pageNum );
 };
 
+QString PdfDocument::pageText( int pageNo ) {
+
+	return mPages.at( pageNo )->text( QRectF() );
+};
+
 void PdfDocument::loadPdf() {
 
 	mPdfDoc = Poppler::Document::load( mPdfPath );
