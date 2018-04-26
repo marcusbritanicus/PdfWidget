@@ -42,7 +42,7 @@ PdfPage* PdfDocument::page( int pageNum ) const {
 	return mPages.at( pageNum );
 };
 
-QString PdfDocument::pageText( int pageNo ) {
+QString PdfDocument::pageText( int pageNo ) const {
 
 	return mPages.at( pageNo )->text( QRectF() );
 };
