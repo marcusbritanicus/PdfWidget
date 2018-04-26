@@ -27,7 +27,7 @@
 
 // Local Headers
 #include "PdfDocument.hpp"
-#include "PdfView.hh"
+#include "PdfView.hpp"
 
 int main( int argc, char **argv ) {
 

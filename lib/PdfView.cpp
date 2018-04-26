@@ -4,7 +4,7 @@
 	*
 */
 
-#include "PdfView.hh"
+#include "PdfView.hpp"
 
 PdfView::PdfView( QWidget *parent ) : QScrollArea( parent ) {
 
