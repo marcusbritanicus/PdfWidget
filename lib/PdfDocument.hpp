@@ -1,6 +1,6 @@
 /*
 	*
-	* PdfDocument - PdfDocument class header
+	* AbstractPdfDocument - AbstractPdfDocument class header
 	*
 */
 
@@ -10,42 +10,256 @@
 #include <QtGui>
 
 #if QT_VERSION >= 0x050000
-	#include <poppler-qt5.h>
 	#include <QtWidgets>
-#else
-	#include <poppler-qt4.h>
 #endif
 
-typedef Poppler::Page PdfPage;
-typedef QList<Poppler::Page*> PdfPages;
+#include "MuPdfDocument.hpp"
+#include "PopplerDocument.hpp"
 
 class PdfDocument : public QObject {
 	Q_OBJECT
 
 	public:
-		PdfDocument( QString pdfPath );
+		enum {
+			MuPdfRenderBackend = 0xC32C65,
+			PopplerRenderBackend
+		};
 
-		Poppler::Document* document();
-		PdfPages allPages();
+		PdfDocument( QString path, int rndrBknd ) {
 
-		QString name() const;
-		QString title() const;
+			mRenderBackend = rndrBknd;
 
-		int pages() const;
-		PdfPage *page( int pageNum ) const;
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+				muDoc =  new MuPdfDocument( path );
+				muDoc->loadDocument();
 
-		QString pageText( int pageNo ) const;
-		QString text( QRect ) const;
+				connect( muDoc, SIGNAL( loadFailed() ), this, SIGNAL( loadFailed() ) );
+				connect( muDoc, SIGNAL( pdfLoaded() ), this, SIGNAL( pdfLoaded() ) );
+
+				popplerDoc = 0;
+			}
+
+			else {
+				muDoc = 0;
+
+				popplerDoc = new PopplerDocument( path );
+				connect( popplerDoc, SIGNAL( loadFailed() ), this, SIGNAL( loadFailed() ) );
+				connect( popplerDoc, SIGNAL( pdfLoaded() ), this, SIGNAL( pdfLoaded() ) );
+			}
+		};
+
+		/* MuPdf Document */
+		MuDocument* muDocument() {
+
+			if ( mRenderBackend == MuPdfRenderBackend )
+				return muDoc->document();
+
+			return 0;
+		};
+
+		/* MuPdf Page */
+		MuPage* muPage( int pgNo ) const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->page( pgNo );
+			}
+
+			return 0;
+		};
+
+		/* MuPdf Pages */
+		MuPages allMuPages() {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->allPages();
+			}
+
+			return MuPages();
+		};
+
+		/* Poppler Document */
+		Poppler::Document* popplerDocument() {
+
+			return 0;
+		};
+
+		/* Poppler Page */
+		PdfPage *popplerPage( int ) const {
+
+			return 0;
+		};
+
+		/* Poppler Pages */
+		PdfPages allPopplerPages() {
+
+			return PdfPages();
+		};
+
+		/* Check if a password is needed */
+		bool passwordNeeded() {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->passwordNeeded();
+			}
+
+			else {
+
+				return popplerDoc->passwordNeeded();
+			}
+		};
+
+		/* Set a password */
+		void setPassword( QString pass ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->setPassword( pass );
+			}
+
+			else {
+
+				return popplerDoc->setPassword( pass );
+			}
+		};
+
+		/* Pdf File Name and File Path */
+		QString pdfName() const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->pdfName();
+			}
+
+			else {
+
+				return popplerDoc->pdfName();
+			}
+		};
+
+		QString pdfPath() const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->pdfPath();
+			}
+
+			else {
+
+				return popplerDoc->pdfPath();
+			}
+		};
+
+		/* Number of pages */
+		int pageCount() const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->pageCount();
+			}
+
+			else {
+
+				return popplerDoc->pageCount();
+			}
+		};
+
+		/* Size of the page */
+		QSizeF pageSize( int pgNo ) const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->pageSize( pgNo );
+			}
+
+			else {
+
+				return popplerDoc->pageSize( pgNo );
+			}
+
+			return QSizeF();
+		};
+
+		/* Render and return a page */
+		QImage renderPage( int pgNo ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->renderPage( pgNo );
+			}
+
+			else {
+
+				return popplerDoc->renderPage( pgNo );
+			}
+
+			//return QSizeF();
+		};
+
+		/* Page Text */
+		QString pageText( int pgNo ) const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->pageText( pgNo );
+			}
+
+			else {
+
+				return popplerDoc->pageText( pgNo );
+			}
+		};
+
+		/* Text of a Selection rectangle */
+		QString text( int pgNo, QRectF rect ) const {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->text( pgNo, rect );
+			}
+
+			else {
+
+				return popplerDoc->text( pgNo, rect );
+			}
+		};
+
+		/* Pdf scale factor */
+		void setZoom( qreal zoom ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->setZoom( zoom );
+			}
+
+			else {
+
+				return popplerDoc->setZoom( zoom );
+			}
+		};
+
+		bool isReady() {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->isReady();
+			}
+
+			else {
+
+				return popplerDoc->isReady();
+			}
+		}
 
 	private:
-		Poppler::Document *mPdfDoc;
-		bool mDocumentLoaded;
+		MuPdfDocument *muDoc;
+		PopplerDocument *popplerDoc;
 
-		QString mPdfPath;
-		PdfPages mPages;
-
-		void loadPdf();
+		int mRenderBackend;
 
 	Q_SIGNALS:
 		void pdfLoaded();
+		void loadFailed();
 };

@@ -13,13 +13,11 @@
 	#include <QtWidgets>
 #endif
 
-#include "PdfDocument.hpp"
-
 class PdfPrinter : public QDialog {
 	Q_OBJECT
 
 	public:
-		PdfPrinter( PdfDocument *PdfDoc, int curPg = 1, QWidget *parent = NULL );
+		PdfPrinter( QString path, int curPg = 1, QWidget *parent = NULL );
 
 	private:
 		void setupUI();
@@ -32,7 +30,7 @@ class PdfPrinter : public QDialog {
 		QSpinBox *copiesSB;
 		QPushButton *cancelBtn, *printBtn;
 
-		PdfDocument *mPdfDoc;
+		QString mPdfDoc;
 		int mCurrentPage;
 
 	private Q_SLOTS:

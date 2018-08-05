@@ -1,4 +1,12 @@
-PdfWidget v0.0.1
+PdfWidget v0.0.3
+	- PdfDocument no supports two backends, Poppler and MuPdf
+	- Encryption check enabled
+	- PdfView has been refined
 
+PdfWidget v0.0.2
+	- PdfDocument refined
+	- PdfView rewritten to support Single/Double/Book + Continuous/Discrete views
+
+PdfWidget v0.0.1
 	- Initial attempt at making a simple PDFWidget for Qt
 	- Feature: Zooming of pages (25% of the current view width to 400% of the current view width)

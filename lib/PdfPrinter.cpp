@@ -7,9 +7,9 @@
 #include <QPrinterInfo>
 #include "PdfPrinter.hpp"
 
-PdfPrinter::PdfPrinter( PdfDocument *pdfDoc, int curPg, QWidget *parent ) : QDialog( parent ) {
+PdfPrinter::PdfPrinter( QString path, int curPg, QWidget *parent ) : QDialog( parent ) {
 
-	mPdfDoc = pdfDoc;
+	mPdfDoc = QString( path );
 	mCurrentPage = curPg;
 	setWindowTitle( "Print PDF Document" );
 
@@ -156,7 +156,7 @@ void PdfPrinter::print() {
 		lprOpts << "-o" << "collate=true";
 	}
 
-	lprOpts << mPdfDoc->name();
+	lprOpts << mPdfDoc;
 
 	printf( "lpr " );
 	Q_FOREACH( QString opt, lprOpts )

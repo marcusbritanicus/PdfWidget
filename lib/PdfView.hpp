@@ -20,11 +20,8 @@ class PdfView : public QScrollArea {
 
 	public:
 		PdfView( QWidget *parent );
-		PdfView( QString, QWidget *parent );
 
 		void setPdfDocument( PdfDocument *Pdf );
-		void load( QString pdfPath );
-		QString pageText( int );
 
 		qreal zoom();
 		void setZoom( qreal );
@@ -32,21 +29,16 @@ class PdfView : public QScrollArea {
 	private:
 		PdfDocument *PdfDoc;
 		QHash<int, QImage> renderedImages;
-		QHash<int, QRect> pageRects;
+		QHash<int, QRectF> pageRects;
 
 		int currentPage;
 		qreal mZoom;
 
-		void basicInit();
-
 		void getCurrentPage();
-		void lookAround();
 
 		void reshapeView();
-		float getResolution( int );
 
-		void paintPage( int );
-		void paintRect( int );
+		bool isPageVisible( int pgNo );
 
 	public Q_SLOTS:
 		void slotZoomIn() {
@@ -54,15 +46,15 @@ class PdfView : public QScrollArea {
 			if ( mZoom >= 4.0 )
 				return;
 
-			setZoom( mZoom + 0.25 );
+			setZoom( mZoom + 0.1 );
 		};
 
 		void slotZoomOut() {
 
-			if ( mZoom <= 0.25 )
+			if ( mZoom <= 0.1 )
 				return;
 
-			setZoom( mZoom - 0.25 );
+			setZoom( mZoom - 0.1 );
 		};
 
 	protected:
@@ -71,20 +63,3 @@ class PdfView : public QScrollArea {
 		void resizeEvent( QResizeEvent *rEvent );
 		void wheelEvent( QWheelEvent *wEvent );
 };
-
-/*
-class PageRenderer : public QThread {
-	Q_OBJECT
-
-	public:
-		PageRenderer( QWidget *parent );
-
-		void render( PdfPages pages );
-
-	protected:
-		void run();
-
-	private:
-		PdfPages pageList;
-};
-*/

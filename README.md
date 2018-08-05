@@ -1,18 +1,17 @@
 # PdfWidget
-## A nascent PDF view written based on Qt and Poppler
+## A nascent PDF view written based on Qt
 
-This library currently has very minimal features.
-The only thing it currently does properly is render the pages, and zoom in and zoom out.
-
-In the subsequent commits, I plan to enable encryption check, better rendering of pages
-when zoomed out to less than page width, proper page rectangles and so on.
+Its very few features are
+- Two render backends: MuPdf and Poppler
+- Encryption support
+- Zoom in and Zoom out (10% to 400%)
 
 ### Qt4 and Qt5 builds are supported
 
 ### Notes for compiling - linux:
 
 * Download the sources
-   - Git: `git clone https://github.com/marcusbritanicus/PdfWidget PdfWidget`
-   - Tar: `wget https://github.com/marcusbritanicus/PdfWidget/archive/master.tar.gz && tar -xf master.tar.gz`
+   - Git: `git clone https://gitlab.com/marcusbritanicus/PdfWidget PdfWidget`
+   - Tar: `wget https://gitlab.com/marcusbritanicus/PdfWidget/archive/master.tar.gz && tar -xf master.tar.gz`
 * Enter `PdfWidget-master`
 * Open the terminal and type: `qmake && make`

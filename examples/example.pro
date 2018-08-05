@@ -7,21 +7,17 @@ DEPENDPATH += . ../lib/
 # Input
 SOURCES += Main.cpp
 
-# Input
-HEADERS += ../lib/PdfDocument.hpp ../lib/PdfView.hpp
-SOURCES += ../lib/PdfDocument.cpp ../lib/PdfView.cpp
-
 # Qt4
 lessThan( QT_MAJOR_VERSION, 5 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt4
-	LIBS         += -L/usr/lib -lpoppler-qt4
+	LIBS         += -L/usr/lib -lpoppler-qt4 ../lib/libpdfwidget4.a -lmupdf -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
 	TARGET        = pdfwidget
 }
 
 # Qt5
 greaterThan( QT_MAJOR_VERSION, 4 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt5
-	LIBS         += -L/usr/lib -lpoppler-qt5
+	LIBS         += -L/usr/lib -lpoppler-qt5 ../lib/libpdfwidget.a -lmupdf -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
 	TARGET        = pdfwidget5
 	QT += widgets printsupport
 }
