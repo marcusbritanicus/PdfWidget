@@ -62,4 +62,6 @@ class PdfView : public QScrollArea {
 
 		void resizeEvent( QResizeEvent *rEvent );
 		void wheelEvent( QWheelEvent *wEvent );
+
+		void keyPressEvent( QKeyEvent *kEvent );
 };

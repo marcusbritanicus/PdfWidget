@@ -178,6 +178,10 @@ void PdfView::paintEvent( QPaintEvent *pEvent ) {
 void PdfView::resizeEvent( QResizeEvent *rEvent ) {
 
 	rEvent->accept();
+
+	int width = rEvent->size().width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+	setZoom( PdfDoc->zoomForWidth( 0, width ) );
+
 	reshapeView();
 };
 
@@ -185,12 +189,36 @@ void PdfView::wheelEvent( QWheelEvent *wEvent ) {
 
 	QScrollArea::wheelEvent( wEvent );
 
-	 int cPos = verticalScrollBar()->value();
+	int cPos = verticalScrollBar()->value();
 
-	 int numDegrees = -wEvent->delta() / 8;
-	 verticalScrollBar()->setValue( cPos + numDegrees * vScroll->singleStep() );
+	int numDegrees = -wEvent->delta() / 8;
+	verticalScrollBar()->setValue( cPos + numDegrees * verticalScrollBar()->singleStep() );
 
-	 wEvent->accept();
+	wEvent->accept();
 
-	 viewport()->repaint();
+	viewport()->repaint();
+};
+
+void PdfView::keyPressEvent( QKeyEvent *kEvent ) {
+
+	if ( kEvent->key() == Qt::Key_Right ) {
+		if ( currentPage + 1 < PdfDoc->pageCount() ) {
+
+			verticalScrollBar()->setValue( pageRects.value( currentPage + 1 ).top() - 5 );
+		}
+	}
+
+	else if ( kEvent->key() == Qt::Key_Left ) {
+		if ( currentPage - 1 >= 0 ) {
+
+			verticalScrollBar()->setValue( pageRects.value( currentPage - 1 ).top() - 5 );
+		}
+	}
+
+	else {
+
+		QScrollArea::keyPressEvent( kEvent );
+	}
+
+	kEvent->accept();
 };

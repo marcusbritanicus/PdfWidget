@@ -148,7 +148,7 @@ qreal MuPdfDocument::zoomForWidth( int pageNo, qreal width ) {
 	fz_rect rBox;
 	fz_bound_page( mCtx, mPageList.at( pageNo ), &rBox );
 
-	return 1.0 * ( rBox.x1 - rBox.x0 ) / width;
+	return 1.0 * width / ( rBox.x1 - rBox.x0 );
 };
 
 qreal MuPdfDocument::zoomForHeight( int pageNo, qreal height ) {
@@ -159,7 +159,7 @@ qreal MuPdfDocument::zoomForHeight( int pageNo, qreal height ) {
 	fz_rect rBox;
 	fz_bound_page( mCtx, mPageList.at( pageNo ), &rBox );
 
-	return 1.0 * ( rBox.y1 - rBox.y0 ) / height;
+	return 1.0 * height / ( rBox.y1 - rBox.y0 );
 };
 
 void MuPdfDocument::loadDocument() {

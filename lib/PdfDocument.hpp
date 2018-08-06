@@ -226,6 +226,32 @@ class PdfDocument : public QObject {
 			}
 		};
 
+		qreal zoomForWidth( int pageNo, qreal width ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->zoomForWidth( pageNo, width );
+			}
+
+			else {
+
+				return popplerDoc->zoomForWidth( pageNo, width );
+			}
+		};
+
+		qreal zoomForHeight( int pageNo, qreal width ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->zoomForHeight( pageNo, width );
+			}
+
+			else {
+
+				return popplerDoc->zoomForHeight( pageNo, width );
+			}
+		};
+
 		/* Pdf scale factor */
 		void setZoom( qreal zoom ) {
 

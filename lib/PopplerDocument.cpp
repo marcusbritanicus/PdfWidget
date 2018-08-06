@@ -71,7 +71,7 @@ qreal PopplerDocument::zoomForWidth( int pageNo, qreal width ) {
 	if ( pageNo >= mPages.count() )
 		return 0.0;
 
-	return 1.0 * page( pageNo )->pageSizeF().width() / width;
+	return 1.0 * width / page( pageNo )->pageSizeF().width();
 };
 
 qreal PopplerDocument::zoomForHeight( int pageNo, qreal height ) {
@@ -79,7 +79,7 @@ qreal PopplerDocument::zoomForHeight( int pageNo, qreal height ) {
 	if ( pageNo >= mPages.count() )
 		return 0.0;
 
-	return 1.0 * page( pageNo )->pageSizeF().height() / height;
+	return 1.0 * height / page( pageNo )->pageSizeF().height();
 };
 
 void PopplerDocument::loadPdf() {
