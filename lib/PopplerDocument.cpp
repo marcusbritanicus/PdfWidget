@@ -56,6 +56,18 @@ QImage PopplerDocument::renderPage( int pageNo ) {
 	return page( pageNo )->renderToImage( 72 * mZoom, 72 * mZoom );
 };
 
+QImage PopplerDocument::renderPageForWidth( int pageNo, qreal width ) {
+
+	qreal zoom = zoomForWidth( pageNo, width );
+	return page( pageNo )->renderToImage( 72 * zoom, 72 * zoom );
+};
+
+QImage PopplerDocument::renderPageForHeight( int pageNo, qreal height ) {
+
+	qreal zoom = zoomForHeight( pageNo, height );
+	return page( pageNo )->renderToImage( 72 * zoom, 72 * zoom );
+};
+
 QString PopplerDocument::pageText( int pageNo ) const {
 
 	return mPages.at( pageNo )->text( QRectF() );

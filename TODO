@@ -1,7 +1,27 @@
-PdfWidget 0.0.4
+PdfWidget 0.0.3
+
+PdfDocument
+	✓ Backends
+		✓ MuPdf Backend
+		✓ Poppler Backend
+
+		✓ Supported Features
+			- Render page to image at multiple dpi values
+			- Extract text from a page
+			- Check for password
 
 PdfView
-	□ ViewModes: Book, and Facing Pages
+	◐ ViewModes:
+		✓ SinglePageView
+		✓ DoublePageView
+		✓ FitPageToWidth
+		✓ FitPageToHeight
+		□ BookView
+
+	◐ LayoutMode:
+		◐ DiscreetMode (SinglePage)
+		✓ Continuous Mode
+
 
 Note:
 	✍ - Work in progress

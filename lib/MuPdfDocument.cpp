@@ -112,6 +112,96 @@ QImage MuPdfDocument::renderPage( int pgNo ) {
 	return img;
 };
 
+QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) {
+
+	fz_irect iBox;
+	fz_rect rBox;
+	fz_pixmap *image;
+	fz_colorspace *colorspace;
+	fz_matrix mMtx;
+
+    colorspace = fz_device_rgb( mCtx );
+
+	MuPage *pg = mPageList.at( pgNo );
+
+	qreal realZoom = pow( zoomForWidth( pgNo, width ), 0.5 );
+
+	fz_rotate( &mMtx, 0 );
+	fz_scale( &mMtx, realZoom, realZoom );
+
+	fz_bound_page( mCtx, pg, &rBox );
+	fz_round_rect( &iBox, fz_transform_rect( &rBox, &mMtx ) );
+	fz_rect_from_irect( &rBox, &iBox );
+
+	/* Necessary: otherwise only a part of the page is rendered */
+	iBox.x1 *= realZoom;
+	iBox.y1 *= realZoom;
+
+	fz_try( mCtx ) {
+		image = fz_new_pixmap_with_bbox( mCtx, colorspace, &iBox, 0, 1 );
+		fz_clear_pixmap_with_value( mCtx, image, 0xff );
+		fz_device *dev = fz_new_draw_device_with_bbox( mCtx, &mMtx, image, &iBox );
+
+		fz_run_page( mCtx, pg, dev, &mMtx, NULL );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Cannot render page: %s\n", fz_caught_message( mCtx ) ) ;
+		fz_drop_page( mCtx, pg );
+		fz_drop_colorspace( mCtx, colorspace );
+		return QImage();
+	}
+
+	QImage img = QImage( image->samples, ( iBox.x1 - iBox.x0 ), ( iBox.y1 - iBox.y0 ), QImage::Format_ARGB32 );
+	return img;
+};
+
+QImage MuPdfDocument::renderPageForHeight( int pgNo, qreal height ) {
+
+	fz_irect iBox;
+	fz_rect rBox;
+	fz_pixmap *image;
+	fz_colorspace *colorspace;
+	fz_matrix mMtx;
+
+    colorspace = fz_device_rgb( mCtx );
+
+	MuPage *pg = mPageList.at( pgNo );
+
+	qreal realZoom = pow( zoomForHeight( pgNo, height ), 0.5 );
+
+	fz_rotate( &mMtx, 0 );
+	fz_scale( &mMtx, realZoom, realZoom );
+
+	fz_bound_page( mCtx, pg, &rBox );
+	fz_round_rect( &iBox, fz_transform_rect( &rBox, &mMtx ) );
+	fz_rect_from_irect( &rBox, &iBox );
+
+	/* Necessary: otherwise only a part of the page is rendered */
+	iBox.x1 *= realZoom;
+	iBox.y1 *= realZoom;
+
+	fz_try( mCtx ) {
+		image = fz_new_pixmap_with_bbox( mCtx, colorspace, &iBox, 0, 1 );
+		fz_clear_pixmap_with_value( mCtx, image, 0xff );
+		fz_device *dev = fz_new_draw_device_with_bbox( mCtx, &mMtx, image, &iBox );
+
+		fz_run_page( mCtx, pg, dev, &mMtx, NULL );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Cannot render page: %s\n", fz_caught_message( mCtx ) ) ;
+		fz_drop_page( mCtx, pg );
+		fz_drop_colorspace( mCtx, colorspace );
+		return QImage();
+	}
+
+	QImage img = QImage( image->samples, ( iBox.x1 - iBox.x0 ), ( iBox.y1 - iBox.y0 ), QImage::Format_ARGB32 );
+	return img;
+};
+
 QString MuPdfDocument::pageText( int pgNo ) const {
 
     return text( pgNo, QRectF( QPointF( 0, 0 ), pageSize( pgNo ) ) );

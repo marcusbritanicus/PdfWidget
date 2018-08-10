@@ -109,6 +109,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->passwordNeeded();
 			}
+
+			return false;
 		};
 
 		/* Set a password */
@@ -137,6 +139,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->pdfName();
 			}
+
+			return QString();
 		};
 
 		QString pdfPath() const {
@@ -150,6 +154,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->pdfPath();
 			}
+
+			return QString();
 		};
 
 		/* Number of pages */
@@ -164,6 +170,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->pageCount();
 			}
+
+			return 0;
 		};
 
 		/* Size of the page */
@@ -195,7 +203,39 @@ class PdfDocument : public QObject {
 				return popplerDoc->renderPage( pgNo );
 			}
 
-			//return QSizeF();
+			return QImage();
+		};
+
+		/* Render and return a page */
+		QImage renderPageForWidth( int pgNo, qreal width ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->renderPageForWidth( pgNo, width );
+			}
+
+			else {
+
+				return popplerDoc->renderPageForWidth( pgNo, width );
+			}
+
+			return QImage();
+		};
+
+		/* Render and return a page */
+		QImage renderPageForHeight( int pgNo, qreal height ) {
+
+			if ( mRenderBackend == MuPdfRenderBackend ) {
+
+				return muDoc->renderPageForHeight( pgNo, height );
+			}
+
+			else {
+
+				return popplerDoc->renderPageForHeight( pgNo, height );
+			}
+
+			return QImage();
 		};
 
 		/* Page Text */
@@ -210,6 +250,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->pageText( pgNo );
 			}
+
+			return QString();
 		};
 
 		/* Text of a Selection rectangle */
@@ -224,6 +266,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->text( pgNo, rect );
 			}
+
+			return QString();
 		};
 
 		qreal zoomForWidth( int pageNo, qreal width ) {
@@ -237,6 +281,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->zoomForWidth( pageNo, width );
 			}
+
+			return 1.0;
 		};
 
 		qreal zoomForHeight( int pageNo, qreal width ) {
@@ -250,6 +296,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->zoomForHeight( pageNo, width );
 			}
+
+			return 1.0;
 		};
 
 		/* Pdf scale factor */
@@ -277,6 +325,8 @@ class PdfDocument : public QObject {
 
 				return popplerDoc->isReady();
 			}
+
+			return false;
 		}
 
 	private:

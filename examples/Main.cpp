@@ -33,10 +33,12 @@ int main( int argc, char **argv ) {
 
 	QApplication app( argc, argv );
 
-	PdfDocument *pdf = new PdfDocument( argv[ 1 ], PdfDocument::MuPdfRenderBackend );
-
 	PdfView *view = new PdfView( NULL );
-	view->setPdfDocument( pdf );
+
+	view->setViewMode( PdfView::SinglePageView );
+	view->setLayoutMode( PdfView::Continuous );
+
+	view->setPdfDocument( new PdfDocument( argv[ 1 ], PdfDocument::MuPdfRenderBackend ) );
 
 	view->showMaximized();
 

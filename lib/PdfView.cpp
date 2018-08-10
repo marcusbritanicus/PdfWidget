@@ -17,8 +17,12 @@ PdfView::PdfView( QWidget *parent ) : QScrollArea( parent ) {
 
 	setMinimumSize( QSize( 640, 480 ) );
 
+	PdfDoc = 0;
 	currentPage = -1;
 	mZoom = 1.0;
+
+	mViewMode = SinglePageView;
+	mLytMode = Continuous;
 
 	QAction *zoomInAct = new QAction( this );
 	zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
@@ -40,6 +44,7 @@ void PdfView::setPdfDocument( PdfDocument *Pdf ) {
 	setWindowTitle( "PdfView - " + PdfDoc->pdfName() );
 
 	reshapeView();
+	getCurrentPage();
 };
 
 qreal PdfView::zoom() {
@@ -63,59 +68,375 @@ void PdfView::setZoom( qreal zoom ) {
 
 void PdfView::getCurrentPage() {
 
+	if ( not PdfDoc or not PdfDoc->isReady() )
+		return;
+
 	/* Fetch and store the rendering of the current page */
 	if ( PdfDoc->pageCount() <= 0 )
 		return;
 
 	QRectF viewRect = QRectF( QPointF( 0, verticalScrollBar()->value() ), viewport()->size() );
 
-	currentPage = 0;
-	qreal area = 0;
-	for( int pg = 0; pg < PdfDoc->pageCount(); pg++ ) {
-		QRectF xRect = pageRects[ pg ].intersected( viewRect );
-		qreal newArea = abs( xRect.width() *  xRect.height() );
-		if ( newArea > area ) {
-			currentPage = pg;
-			area = newArea;
+	if ( mLytMode == Continuous ) {
+		currentPage = 0;
+
+		/* Get the current page: maximum area => current page */
+		qreal area = 0;
+		for( int pg = 0; pg < PdfDoc->pageCount(); pg++ ) {
+			QRectF xRect = pageRects[ pg ].intersected( viewRect );
+			qreal newArea = abs( xRect.width() *  xRect.height() );
+			if ( newArea > area ) {
+				currentPage = pg;
+				area = newArea;
+			}
+		}
+
+		/* Render the images and store them */
+		switch( mViewMode ) {
+			case FitPageToWidth: {
+				qreal width = viewport()->width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPageForWidth( currentPage, width );
+
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPageForWidth( currentPage + 1, width );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPageForWidth( currentPage - 1, width );
+				}
+
+				/* Render all other pages which are visible in the viewport */
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					if ( isPageVisible( i ) and renderedImages.value( i ).isNull() )
+						renderedImages[ i ] = PdfDoc->renderPageForWidth( i, width );
+				}
+
+				break;
+			}
+
+			case FitPageToHeight: {
+				qreal height = viewport()->height() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPageForHeight( currentPage, height );
+
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPageForHeight( currentPage + 1, height );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPageForHeight( currentPage - 1, height );
+				}
+
+				/* Render all other pages which are visible in the viewport */
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					if ( isPageVisible( i ) and renderedImages.value( i ).isNull() )
+						renderedImages[ i ] = PdfDoc->renderPageForHeight( i, height );
+				}
+
+				break;
+			}
+
+			default: {
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPage( currentPage );
+
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPage( currentPage + 1 );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPage( currentPage - 1 );
+				}
+
+				/* Render all other pages which are visible in the viewport */
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					if ( isPageVisible( i ) and renderedImages.value( i ).isNull() )
+						renderedImages[ i ] = PdfDoc->renderPage( i );
+				}
+
+				break;
+			}
 		}
 	}
 
-	/* Render the current page if not rendered already */
-	if ( not renderedImages.keys().contains( currentPage ) )
-		renderedImages[ currentPage ] = PdfDoc->renderPage( currentPage );
+	else {
+		switch( mViewMode ) {
+			case FitPageToWidth: {
+				qreal width = viewport()->width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
 
-	for( int i = 1; i < 6; i++ ) {
-		if ( currentPage + i < PdfDoc->pageCount() ) {
-			if ( renderedImages.value( currentPage + i ).isNull() )
-				renderedImages[ currentPage + i ] = PdfDoc->renderPage( currentPage + i );
-		}
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPageForWidth( currentPage, width );
 
-		if ( currentPage - i >= 0 ) {
-			if ( renderedImages.value( currentPage - i ).isNull() )
-				renderedImages[ currentPage - i ] = PdfDoc->renderPage( currentPage - i );
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPageForWidth( currentPage + 1, width );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPageForWidth( currentPage - 1, width );
+				}
+
+				break;
+			}
+
+			case FitPageToHeight: {
+				qreal height = viewport()->height() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPageForHeight( currentPage, height );
+
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPageForHeight( currentPage + 1, height );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPageForHeight( currentPage - 1, height );
+				}
+
+				break;
+			}
+
+			default: {
+				/* Render the current page if not rendered already */
+				if ( renderedImages.value( currentPage ).isNull() )
+					renderedImages[ currentPage ] = PdfDoc->renderPage( currentPage );
+
+				/* Render the next page if not rendered */
+				if ( currentPage + 1 < PdfDoc->pageCount() ) {
+					if ( renderedImages.value( currentPage + 1 ).isNull() )
+						renderedImages[ currentPage + 1 ] = PdfDoc->renderPage( currentPage + 1 );
+				}
+
+				/* Render the previous page if not rendered */
+				if ( currentPage - 1 >= 0 ) {
+					if ( renderedImages.value( currentPage - 1 ).isNull() )
+						renderedImages[ currentPage - 1 ] = PdfDoc->renderPage( currentPage - 1 );
+				}
+
+				break;
+			}
 		}
 	}
 };
 
 void PdfView::reshapeView() {
 
+	if ( not PdfDoc or not PdfDoc->isReady() )
+		return;
+
 	pageRects.clear();
 	renderedImages.clear();
 
-	int minHeight = 10;
+	int minHeight = 5;
 	int maxWidth = 0;
 
 	verticalScrollBar()->setPageStep( height() / 4 * 3 );
 	verticalScrollBar()->setSingleStep( 30 );
 
-	for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
-		QSizeF pageSize = PdfDoc->pageSize( i );
-		pageRects[ i ] = QRectF( QPointF( 0, minHeight ), pageSize );
+	if ( mLytMode == Continuous ) {
+		switch( mViewMode ) {
+			case SinglePageView: {
 
-		maxWidth = ( pageSize.width() > maxWidth ? pageSize.width() : maxWidth );
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					QSizeF pageSize = PdfDoc->pageSize( i );
+					pageRects[ i ] = QRectF( QPointF( 0, minHeight ), pageSize );
 
-		minHeight += ( int )( pageSize.height() );
-		minHeight += 5;
+					maxWidth = ( pageSize.width() > maxWidth ? pageSize.width() : maxWidth );
+
+					minHeight += ( int )( pageSize.height() );
+					minHeight += 5;
+				}
+
+				break;
+			}
+
+			case DoublePageView: {
+
+				for( int i = 0; i < PdfDoc->pageCount(); i += 2 ) {
+
+					qreal w = 0, h = 0;
+
+					/* Size of first page */
+					QSizeF pageSize = PdfDoc->pageSize( i );
+					pageRects[ i ] = QRectF( QPointF( 0, minHeight ), pageSize );
+					w += pageSize.width();
+					h = pageSize.height();
+
+					if ( ( i + 1 ) < PdfDoc->pageCount() ) {
+						/* Size of second page */
+						pageSize = PdfDoc->pageSize( i + 1 );
+						pageRects[ i + 1 ] = QRectF( QPointF( pageRects[ i ].width() + 5, minHeight ), pageSize );
+
+						w += pageSize.width() + 5;
+						h = ( pageSize.height() > h ? pageSize.height() : h );
+					}
+
+					maxWidth = ( w > maxWidth ? w : maxWidth );
+
+					minHeight += ( int )( h );
+					minHeight += 5;
+				}
+
+				break;
+			}
+
+			case FitPageToWidth: {
+
+				qreal width = viewport()->width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					QSizeF pageSize = PdfDoc->pageSize( i );
+
+					qreal height = pageSize.height() * width / pageSize.width();
+					pageRects[ i ] = QRectF( QPointF( 0, minHeight ), QSizeF( width, height ) );
+
+					minHeight += ( int )( height );
+					minHeight += 5;
+				}
+
+				maxWidth = width;
+
+				break;
+			}
+
+			case FitPageToHeight: {
+
+				qreal height = viewport()->height() - 10;
+
+				for( int i = 0; i < PdfDoc->pageCount(); i++ ) {
+					QSizeF pageSize = PdfDoc->pageSize( i );
+
+					qreal width = pageSize.width() * height / pageSize.height();
+					pageRects[ i ] = QRectF( QPointF( 0, minHeight ), QSizeF( width, height ) );
+
+					maxWidth = ( width > maxWidth ? width : maxWidth );
+
+					minHeight += ( int )( height );
+					minHeight += 5;
+				}
+
+				break;
+			}
+
+			case BookView:{
+
+				/*
+					* First we scan the maximum page width, and maximum page height.
+					* We shall use this value to render all the pages. All pages
+					* will have uniform width and height.
+				*/
+
+				break;
+			}
+		}
+	}
+
+	else {
+		switch( mViewMode ) {
+			case SinglePageView: {
+
+				QSizeF pageSize = PdfDoc->pageSize( currentPage );
+				pageRects[ currentPage ] = QRectF( QPointF( 0, 5 ), pageSize );
+
+				minHeight = pageSize.height() + 10;
+				maxWidth = pageSize.width();
+
+				break;
+			}
+
+			case FitPageToWidth: {
+
+				QSizeF pageSize = PdfDoc->pageSize( currentPage );
+
+				qreal width = viewport()->width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
+				qreal height = pageSize.height() * width / pageSize.width();
+
+				pageRects[ currentPage ] = QRectF( QPointF( 0, 5 ), QSizeF( width, height ) );
+
+				minHeight = height + 10;
+				maxWidth = width;
+
+				break;
+			}
+
+			case FitPageToHeight: {
+
+
+				QSizeF pageSize = PdfDoc->pageSize( currentPage );
+
+				qreal height = viewport()->height() - 10;
+				qreal width = pageSize.width() * height / pageSize.height();
+				pageRects[ currentPage ] = QRectF( QPointF( 0, 5 ), QSizeF( width, height ) );
+
+				maxWidth = width;
+				minHeight = height;
+
+				break;
+			}
+
+			case DoublePageView: {
+
+				qreal w = 0, h = 0;
+
+				/* Size of first page */
+				QSizeF pageSize = PdfDoc->pageSize( currentPage );
+				pageRects[ currentPage ] = QRectF( QPointF( 0, 5 ), pageSize );
+				w += pageSize.width();
+				h = pageSize.height();
+
+				if ( ( currentPage + 1 ) < PdfDoc->pageCount() ) {
+					/* Size of second page */
+					pageSize = PdfDoc->pageSize( currentPage + 1 );
+					pageRects[ currentPage + 1 ] = QRectF( QPointF( w + 5, 5 ), pageSize );
+
+					w += pageSize.width() + 5;
+					h = ( pageSize.height() > h ? pageSize.height() : h );
+				}
+
+				maxWidth = w;
+				minHeight = h + 10;
+
+				break;
+			}
+
+			case BookView:{
+
+				/*
+					* First we scan the maximum page width, and maximum page height.
+					* We shall use this value to render all the pages. All pages
+					* will have uniform width and height.
+				*/
+
+				break;
+			}
+		}
 	}
 
 	/* 20px border */
@@ -159,16 +480,28 @@ void PdfView::paintEvent( QPaintEvent *pEvent ) {
 	painter.translate( widget()->x() + 10, -h );
 	painter.drawImage( pageRects[ currentPage ], renderedImages[ currentPage ] );
 
-	for( int pg = 0; pg < PdfDoc->pageCount(); pg++ )
-		painter.drawImage( pageRects[ pg ], renderedImages[ pg ] );
+	if ( mLytMode == Continuous ) {
+		for( int pg = 0; pg < PdfDoc->pageCount(); pg++ ) {
+			if ( isPageVisible( pg ) )
+				painter.drawImage( pageRects[ pg ], renderedImages[ pg ] );
+		}
 
-	/* Draw the current page rect */
-	painter.setPen( Qt::black );
-	if ( pageRects[ currentPage ].y() + pageRects[ currentPage ].height() - h < height() / 2 )
-		painter.drawRect( pageRects[ currentPage + 1 ] );
+		/* Draw the current page rect */
+		painter.setPen( Qt::black );
+		if ( mViewMode != SinglePageView ) {
+			painter.drawRect( pageRects[ currentPage ] );
+			if ( currentPage + 1 < PdfDoc->pageCount() )
+				painter.drawRect( pageRects[ currentPage + 1 ] );
+		}
 
-	else
+		else
+			painter.drawRect( pageRects[ currentPage ] );
+	}
+
+	else {
+
 		painter.drawRect( pageRects[ currentPage ] );
+	}
 
 	painter.end();
 
@@ -180,9 +513,52 @@ void PdfView::resizeEvent( QResizeEvent *rEvent ) {
 	rEvent->accept();
 
 	int width = rEvent->size().width() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
-	setZoom( PdfDoc->zoomForWidth( 0, width ) );
+	int height = rEvent->size().height() - style()->pixelMetric( QStyle::PM_ScrollBarExtent ) - 25;
 
-	reshapeView();
+	if ( rEvent->oldSize() != rEvent->size() ) {
+		/* If the width has actually changed */
+		if ( rEvent->oldSize().width() != rEvent->size().width() ) {
+			/* Book View and Double Page View */
+			switch( mViewMode ) {
+				case SinglePageView: {
+					setZoom( PdfDoc->zoomForWidth( 0, width ) );
+					break;
+				}
+
+				case DoublePageView: {
+					setZoom( PdfDoc->zoomForWidth( 0, ( width - 5.0 ) / 2 ) );
+					break;
+				}
+
+				case BookView: {
+					/* If the width changes, then we have nothing to do */
+					break;
+				}
+			}
+		}
+
+		/* If the height has actually changed */
+		if ( rEvent->oldSize().height() != rEvent->size().height() ) {
+			/* Book View and Double Page View */
+			switch( mViewMode ) {
+				case SinglePageView:
+				case DoublePageView: {
+					/* If the height has changed, then we have nothing to do. */
+					break;
+				}
+
+				case BookView: {
+					setZoom( PdfDoc->zoomForHeight( 0, height / 2 ) );
+					break;
+				}
+			}
+		}
+
+		/* We reshape the view only if there was a resize */
+		reshapeView();
+	}
+
+	repaint();
 };
 
 void PdfView::wheelEvent( QWheelEvent *wEvent ) {
@@ -201,24 +577,78 @@ void PdfView::wheelEvent( QWheelEvent *wEvent ) {
 
 void PdfView::keyPressEvent( QKeyEvent *kEvent ) {
 
-	if ( kEvent->key() == Qt::Key_Right ) {
-		if ( currentPage + 1 < PdfDoc->pageCount() ) {
-
-			verticalScrollBar()->setValue( pageRects.value( currentPage + 1 ).top() - 5 );
+	if ( mViewMode == DoublePageView ) {
+		if ( kEvent->key() == Qt::Key_Right ) {
+			if ( currentPage + 2 < PdfDoc->pageCount() )
+				verticalScrollBar()->setValue( pageRects.value( currentPage + 1 ).top() - 5 );
 		}
-	}
 
-	else if ( kEvent->key() == Qt::Key_Left ) {
-		if ( currentPage - 1 >= 0 ) {
-
-			verticalScrollBar()->setValue( pageRects.value( currentPage - 1 ).top() - 5 );
+		else if ( kEvent->key() == Qt::Key_Left ) {
+			if ( currentPage - 2 >= 0 )
+				verticalScrollBar()->setValue( pageRects.value( currentPage - 1 ).top() - 5 );
 		}
 	}
 
 	else {
+		switch ( kEvent->key() ) {
+			case Qt::Key_Right: {
 
-		QScrollArea::keyPressEvent( kEvent );
+				if ( currentPage + 1 < PdfDoc->pageCount() )
+					verticalScrollBar()->setValue( pageRects.value( currentPage + 1 ).top() - 5 );
+
+				if (mLytMode != Continuous ) {
+					currentPage++;
+					reshapeView();
+				}
+
+				break;
+			};
+
+			case Qt::Key_Left: {
+
+				if ( currentPage - 1 >= 0 )
+					verticalScrollBar()->setValue( pageRects.value( currentPage - 1 ).top() - 5 );
+
+				if (mLytMode != Continuous ) {
+					currentPage--;
+					reshapeView();
+				}
+
+				break;
+			};
+
+			case Qt::Key_Home: {
+
+				verticalScrollBar()->setValue( 0 );
+
+				if (mLytMode != Continuous ) {
+					currentPage = 0;
+					reshapeView();
+				}
+
+				break;
+			};
+
+			case Qt::Key_End: {
+
+				verticalScrollBar()->setValue( widget()->height() );
+
+				if (mLytMode != Continuous ) {
+					currentPage = PdfDoc->pageCount() - 1;
+					reshapeView();
+				}
+
+				break;
+			};
+
+			default: {
+
+				QScrollArea::keyPressEvent( kEvent );
+				break;
+			};
+		}
 	}
 
+	repaint();
 	kEvent->accept();
 };

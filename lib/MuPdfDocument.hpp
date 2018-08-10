@@ -55,12 +55,19 @@ class MuPdfDocument : public QObject {
 		QSizeF pageSize( int pageNo ) const;
 
 		QImage renderPage( int );
+		QImage renderPageForWidth( int, qreal );
+		QImage renderPageForHeight( int, qreal );
 
 		QString pageText( int pageNo ) const;
 		QString text( int pageNo, QRectF ) const;
 
 		qreal zoomForWidth( int pageNo, qreal width );
 		qreal zoomForHeight( int pageNo, qreal width );
+
+		qreal zoom() const {
+
+			return mZoom;
+		};
 
 		void setZoom( qreal zoom ) {
 

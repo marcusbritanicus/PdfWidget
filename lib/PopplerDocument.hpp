@@ -55,6 +55,8 @@ class PopplerDocument : public QObject {
 
 		/* Render and return a page */
 		QImage renderPage( int );
+		QImage renderPageForWidth( int, qreal );
+		QImage renderPageForHeight( int, qreal );
 
 		/* Page Text */
 		QString pageText( int pageNo ) const;

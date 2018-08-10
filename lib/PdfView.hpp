@@ -19,9 +19,48 @@ class PdfView : public QScrollArea {
 	Q_OBJECT
 
 	public:
+		enum ViewMode {
+			SinglePageView = 0x54FC79,
+			DoublePageView,
+			FitPageToWidth,
+			FitPageToHeight,
+			BookView
+		};
+
+		enum LayoutMode {
+			SinglePage = 0x1D83E6,
+			Continuous
+		};
+
 		PdfView( QWidget *parent );
 
 		void setPdfDocument( PdfDocument *Pdf );
+
+		int viewMode() const {
+
+			return mViewMode;
+		};
+
+		void setViewMode( int viewMode ) {
+
+			mViewMode = viewMode;
+
+			reshapeView();
+			getCurrentPage();
+		};
+
+		int layoutMode() const {
+
+			return mLytMode;
+		};
+
+		void setLayoutMode( int lytMode ) {
+
+			mLytMode = lytMode;
+
+			reshapeView();
+			getCurrentPage();
+		};
 
 		qreal zoom();
 		void setZoom( qreal );
@@ -34,25 +73,44 @@ class PdfView : public QScrollArea {
 		int currentPage;
 		qreal mZoom;
 
+		int mViewMode;
+		int mLytMode;
+
 		void getCurrentPage();
 
 		void reshapeView();
 
 		bool isPageVisible( int pgNo );
 
-	public Q_SLOTS:
+	private Q_SLOTS:
 		void slotZoomIn() {
 
+			/* Maximum default zoom 400% */
 			if ( mZoom >= 4.0 )
 				return;
+
+			/* Book view has fixed zoom */
+			if ( mViewMode == BookView )
+				return;
+
+			if ( mViewMode != DoublePageView )
+				mViewMode = SinglePageView;
 
 			setZoom( mZoom + 0.1 );
 		};
 
 		void slotZoomOut() {
 
+			/* Minimum default zoom 10% */
 			if ( mZoom <= 0.1 )
 				return;
+
+			/* Book view has fixed zoom */
+			if ( mViewMode == BookView )
+				return;
+
+			if ( mViewMode != DoublePageView )
+				mViewMode = SinglePageView;
 
 			setZoom( mZoom - 0.1 );
 		};
