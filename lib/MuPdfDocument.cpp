@@ -75,7 +75,7 @@ QImage MuPdfDocument::renderPage( int pgNo ) {
 	fz_colorspace *colorspace;
 	fz_matrix mMtx;
 
-    colorspace = fz_device_rgb( mCtx );
+    colorspace = fz_device_bgr( mCtx );
 
 	MuPage *pg = mPageList.at( pgNo );
 
@@ -120,7 +120,7 @@ QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) {
 	fz_colorspace *colorspace;
 	fz_matrix mMtx;
 
-    colorspace = fz_device_rgb( mCtx );
+    colorspace = fz_device_bgr( mCtx );
 
 	MuPage *pg = mPageList.at( pgNo );
 
@@ -165,7 +165,7 @@ QImage MuPdfDocument::renderPageForHeight( int pgNo, qreal height ) {
 	fz_colorspace *colorspace;
 	fz_matrix mMtx;
 
-    colorspace = fz_device_rgb( mCtx );
+    colorspace = fz_device_bgr( mCtx );
 
 	MuPage *pg = mPageList.at( pgNo );
 
