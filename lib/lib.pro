@@ -35,7 +35,11 @@ greaterThan( QT_MAJOR_VERSION, 4 ) {
 # Silent Compilation
 CONFIG += silent shared_and_static
 
-MOC_DIR 	= $$(BUILD_DIR)/PdfWidget/moc
-OBJECTS_DIR = $$(BUILD_DIR)/PdfWidget/obj
-RCC_DIR		= $$(BUILD_DIR)/PdfWidget/qrc
-UI_DIR      = $$(BUILD_DIR)/PdfWidget/uic
+isEmpty( BUILD_PREFIX ) {
+	BUILD_PREFIX = ./build
+}
+
+MOC_DIR 	= $$BUILD_PREFIX/moc
+OBJECTS_DIR = $$BUILD_PREFIX/obj
+RCC_DIR		= $$BUILD_PREFIX/qrc
+UI_DIR      = $$BUILD_PREFIX/uic
