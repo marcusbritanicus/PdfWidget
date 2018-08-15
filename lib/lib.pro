@@ -36,7 +36,7 @@ greaterThan( QT_MAJOR_VERSION, 4 ) {
 CONFIG += silent shared_and_static
 
 isEmpty( BUILD_PREFIX ) {
-	BUILD_PREFIX = ./build
+	BUILD_PREFIX = ../build
 }
 
 MOC_DIR 	= $$BUILD_PREFIX/moc
