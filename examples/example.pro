@@ -11,14 +11,14 @@ SOURCES += Main.cpp
 lessThan( QT_MAJOR_VERSION, 5 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt4
 	LIBS         += -L/usr/lib -lpoppler-qt4 ../lib/libpdfwidget4.a -lmupdf -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
-	TARGET        = pdfwidget
+	TARGET        = minipdf4
 }
 
 # Qt5
 greaterThan( QT_MAJOR_VERSION, 4 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt5
 	LIBS         += -L/usr/lib -lpoppler-qt5 ../lib/libpdfwidget.a -lmupdf -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
-	TARGET        = pdfwidget5
+	TARGET        = minipdf
 	QT += widgets printsupport
 }
 

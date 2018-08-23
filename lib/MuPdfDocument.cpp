@@ -25,7 +25,7 @@ bool MuPdfDocument::passwordNeeded() {
 void MuPdfDocument::setPassword( QString password ) {
 
 	if ( not fz_authenticate_password( mCtx, mFzDoc, password.toUtf8().constData() ) ) {
-		fprintf( stderr, "Invalid apssword. Please try again.\n" );
+		fprintf( stderr, "Invalid password. Please try again.\n" );
 		mPassNeeded = true;
 		emit loadFailed();
 	}
@@ -271,7 +271,9 @@ void MuPdfDocument::loadDocument() {
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Cannot register document handlers: %s\n", fz_caught_message( mCtx ) ) ;
+
 		fz_drop_context( mCtx );
+
 		emit loadFailed();
 		return;
 	}
@@ -284,15 +286,9 @@ void MuPdfDocument::loadDocument() {
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Cannot open document: %s\n", fz_caught_message( mCtx ) );
-		fz_drop_context( mCtx );
-		emit loadFailed();
-		return;
-	}
 
-	/* Check if the document is encrypted */
-	if ( fz_needs_password( mCtx, mFzDoc ) ) {
-		fprintf( stderr, "Cannot load encrypted document\n" );
-		mPassNeeded = true;
+		fz_drop_context( mCtx );
+
 		emit loadFailed();
 		return;
 	}
@@ -305,8 +301,22 @@ void MuPdfDocument::loadDocument() {
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Cannot count number of pages: %s\n", fz_caught_message( mCtx ) );
+
 		fz_drop_document( mCtx, mFzDoc );
 		fz_drop_context( mCtx );
+
+		emit loadFailed();
+		return;
+	}
+
+	/* Check if the document is encrypted */
+	if ( fz_needs_password( mCtx, mFzDoc ) ) {
+		fprintf( stderr, "Cannot load encrypted document\n" );
+
+		fz_drop_document( mCtx, mFzDoc );
+		fz_drop_context( mCtx );
+
+		mPassNeeded = true;
 		emit loadFailed();
 		return;
 	}
@@ -319,6 +329,11 @@ void MuPdfDocument::loadDocument() {
 
 		fz_catch( mCtx ) {
 			fprintf( stderr, "Cannot create page: %s\n", fz_caught_message( mCtx ) );
+
+			fz_drop_document( mCtx, mFzDoc );
+			fz_drop_page( mCtx, page );
+			fz_drop_context( mCtx );
+
 			emit loadFailed();
 			return;
 		}
