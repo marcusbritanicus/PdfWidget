@@ -1,0 +1,10 @@
+trial.pdf
+Makefile*
+pdfwidget*
+libpdfwidget*
+.qmake.stash
+minipdf*
+build
+mupdf/build
+mupdf/generated
+libmupdf*
