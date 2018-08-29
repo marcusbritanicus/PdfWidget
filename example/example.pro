@@ -7,22 +7,17 @@ DEPENDPATH += . ../lib/ ../mupdf/include
 # Input
 SOURCES += Main.cpp
 
-if ( !exists( "../lib/libpdfwidget.a" ) ) {
-	message( "Building libpdfwidget.a" )
-	system( "cd ../lib/; make static" )
-}
-
 # Qt4
 lessThan( QT_MAJOR_VERSION, 5 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt4
-	LIBS         += -L/usr/lib -lpoppler-qt4 ../lib/libpdfwidget4.a ../lib/libmupdf.a ../lib/libmupdfthird.a -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
+	LIBS         += -L/usr/lib -lpoppler-qt4 -L../lib/ -lpdfwidget4 -L../mupdf/source/ -lmupdf -L../mupdf/mujs/ -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
 	TARGET        = minipdf4
 }
 
 # Qt5
 greaterThan( QT_MAJOR_VERSION, 4 ) {
 	INCLUDEPATH  += /usr/include/poppler/qt5
-	LIBS         += -L/usr/lib -lpoppler-qt5 ../lib/libpdfwidget.a ../lib/libmupdf.a ../lib/libmupdfthird.a -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
+	LIBS         += -L/usr/lib -lpoppler-qt5 -L../lib/ -lpdfwidget -L../mupdf/source/ -lmupdf -L../mupdf/mujs/ -lmupdfthird -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
 	TARGET        = minipdf
 	QT += widgets printsupport
 }
