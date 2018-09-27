@@ -6,7 +6,7 @@
 
 #include "MuPdfDocument.hpp"
 
-MuPdfDocument::MuPdfDocument( QString pdfPath ) {
+MuPdfDocument::MuPdfDocument( QString pdfPath ) : PdfDocument( pdfPath ) {
 
 	mZoom = 1.0;
 
@@ -17,7 +17,7 @@ MuPdfDocument::MuPdfDocument( QString pdfPath ) {
 	mPdfPath = QString( pdfPath );
 };
 
-bool MuPdfDocument::passwordNeeded() {
+bool MuPdfDocument::passwordNeeded() const {
 
 	return mPassNeeded;
 };
@@ -28,9 +28,32 @@ void MuPdfDocument::setPassword( QString password ) {
 		fprintf( stderr, "Invalid password. Please try again.\n" );
 		mPassNeeded = true;
 		emit loadFailed();
+
+		return;
 	}
 
-	loadDocument();
+	for( int i = 0; i < mPages; i++ ) {
+		fz_page *page = 0;
+
+		fz_try( mCtx )
+			page = fz_load_page( mCtx, mFzDoc, i );
+
+		fz_catch( mCtx ) {
+			fprintf( stderr, "Cannot create page: %s\n", fz_caught_message( mCtx ) );
+
+			fz_drop_document( mCtx, mFzDoc );
+			fz_drop_page( mCtx, page );
+			fz_drop_context( mCtx );
+
+			emit loadFailed();
+			return;
+		}
+
+		mPageList << page;
+	}
+
+	emit pdfLoaded();
+	mLoaded = true;
 };
 
 QString MuPdfDocument::pdfName() const {
@@ -48,14 +71,6 @@ int MuPdfDocument::pageCount() const {
 	return mPages;
 };
 
-fz_page* MuPdfDocument::page( int pageNum ) const {
-
-	if ( pageNum >= mPages )
-		return 0;
-
-	return mPageList.at( pageNum );
-};
-
 QSizeF MuPdfDocument::pageSize( int pageNum ) const {
 
 	if ( pageNum >= mPages )
@@ -67,7 +82,7 @@ QSizeF MuPdfDocument::pageSize( int pageNum ) const {
 	return QSizeF( mZoom * ( rBox.x1 - rBox.x0 ), mZoom * ( rBox.y1 - rBox.y0 ) );
 };
 
-QImage MuPdfDocument::renderPage( int pgNo ) {
+QImage MuPdfDocument::renderPage( int pgNo ) const {
 
 	fz_irect iBox;
 	fz_rect rBox;
@@ -112,7 +127,7 @@ QImage MuPdfDocument::renderPage( int pgNo ) {
 	return img;
 };
 
-QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) {
+QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) const {
 
 	fz_irect iBox;
 	fz_rect rBox;
@@ -157,7 +172,7 @@ QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) {
 	return img;
 };
 
-QImage MuPdfDocument::renderPageForHeight( int pgNo, qreal height ) {
+QImage MuPdfDocument::renderPageForHeight( int pgNo, qreal height ) const {
 
 	fz_irect iBox;
 	fz_rect rBox;
@@ -230,7 +245,7 @@ QString MuPdfDocument::text( int pgNo, QRectF rect ) const{
     return ret;
 };
 
-qreal MuPdfDocument::zoomForWidth( int pageNo, qreal width ) {
+qreal MuPdfDocument::zoomForWidth( int pageNo, qreal width ) const {
 
 	if ( pageNo >= mPages )
 		return 0.0;
@@ -241,7 +256,7 @@ qreal MuPdfDocument::zoomForWidth( int pageNo, qreal width ) {
 	return 1.0 * width / ( rBox.x1 - rBox.x0 );
 };
 
-qreal MuPdfDocument::zoomForHeight( int pageNo, qreal height ) {
+qreal MuPdfDocument::zoomForHeight( int pageNo, qreal height ) const {
 
 	if ( pageNo >= mPages )
 		return 0.0;

@@ -16,32 +16,22 @@
 	#include <poppler-qt4.h>
 #endif
 
+#include "PdfDocument.hpp"
+
 typedef Poppler::Page PdfPage;
 typedef QList<Poppler::Page*> PdfPages;
 
-class PopplerDocument : public QObject {
+class PopplerDocument : public PdfDocument {
 	Q_OBJECT
 
 	public:
 		PopplerDocument( QString pdfPath );
 
-		/* Poppler Document */
-		Poppler::Document* document();
-
-		/* Poppler Page */
-		PdfPage *page( int pageNum ) const;
-
-		/* Poppler Pages */
-		PdfPages allPages();
-
 		/* Check if a password is needed */
-		bool passwordNeeded();
+		bool passwordNeeded() const;
 
 		/* Set a password */
-		void setPassword( QString password ) {
-			mPass = QString( password );
-			loadPdf();
-		};
+		void setPassword( QString password );
 
 		/* Pdf File Name and File Path */
 		QString pdfName() const;
@@ -54,9 +44,9 @@ class PopplerDocument : public QObject {
 		QSizeF pageSize( int pageNo ) const;
 
 		/* Render and return a page */
-		QImage renderPage( int );
-		QImage renderPageForWidth( int, qreal );
-		QImage renderPageForHeight( int, qreal );
+		QImage renderPage( int ) const;
+		QImage renderPageForWidth( int, qreal ) const;
+		QImage renderPageForHeight( int, qreal ) const;
 
 		/* Page Text */
 		QString pageText( int pageNo ) const;
@@ -64,8 +54,8 @@ class PopplerDocument : public QObject {
 		/* Text of a Selection rectangle */
 		QString text( int pageNo, QRectF ) const;
 
-		qreal zoomForWidth( int pageNo, qreal width );
-		qreal zoomForHeight( int pageNo, qreal width );
+		qreal zoomForWidth( int pageNo, qreal width ) const;
+		qreal zoomForHeight( int pageNo, qreal width ) const;
 
 		void setZoom( qreal zoom ) {
 
@@ -77,22 +67,17 @@ class PopplerDocument : public QObject {
 			return mLoaded;
 		}
 
+	public Q_SLOTS:
+		void loadDocument();
+
 	private:
 		Poppler::Document *mPdfDoc;
 
 		QString mPdfPath;
 		PdfPages mPages;
 
-		QString mPass;
-
 		qreal mZoom;
 
 		bool mLoaded;
 		bool mPassNeeded;
-
-		void loadPdf();
-
-	Q_SIGNALS:
-		void pdfLoaded();
-		void loadFailed();
 };

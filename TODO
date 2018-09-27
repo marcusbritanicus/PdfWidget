@@ -19,7 +19,7 @@ PdfView
 		□ BookView
 
 	◐ LayoutMode:
-		◐ DiscreetMode (SinglePage)
+		□ DiscreetMode (SinglePage)
 		✓ Continuous Mode
 
 	□ Rotation of pages

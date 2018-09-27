@@ -14,27 +14,42 @@
 #endif
 
 #include "PdfDocument.hpp"
+#include "MuPdfDocument.hpp"
+#include "PopplerDocument.hpp"
 
 class PdfView : public QScrollArea {
 	Q_OBJECT
 
 	public:
 		enum ViewMode {
-			SinglePageView = 0x54FC79,
-			DoublePageView,
-			FitPageToWidth,
-			FitPageToHeight,
-			BookView
+			SinglePageView = 0x54FC79,								// One page at once
+			DoublePageView,											// Two pages at once
+			FitPageToWidth,											// Zoom the page to fit the width of the view
+			FitPageToHeight,										// Zoom the page to fit the height of the view
+			BookView												// First Page Treated as cover, rest will be layout like a book.
 		};
 
 		enum LayoutMode {
-			SinglePage = 0x1D83E6,
-			Continuous
+			SinglePage = 0x1D83E6,									// Only one page will be displayed at once.
+			Continuous,												// All the pages will be displayed in a single shot
+			Book													// First page treated as cover, rest will be layout like a book.
+		};
+
+		/*
+			*
+			* SinglePageView, DoublePageView, FitPageToWidth and FitPageToHeight can be layout using only SinglePage and Continuous layout modes.
+			* BookView can be Book layout mode and vice versa
+			*
+		*/
+
+		enum RenderBackend {
+			MuPdfRenderBackend = 0xC32C65,
+			PopplerRenderBackend
 		};
 
 		PdfView( QWidget *parent );
 
-		void setPdfDocument( PdfDocument *Pdf );
+		void loadPdfDocument( QString, RenderBackend );
 
 		int viewMode() const {
 
@@ -45,8 +60,10 @@ class PdfView : public QScrollArea {
 
 			mViewMode = viewMode;
 
+			if ( viewMode == BookView )
+				mLytMode = Book;
+
 			reshapeView();
-			getCurrentPage();
 		};
 
 		int layoutMode() const {
@@ -58,8 +75,10 @@ class PdfView : public QScrollArea {
 
 			mLytMode = lytMode;
 
+			if ( mLytMode == Book )
+				mViewMode = BookView;
+
 			reshapeView();
-			getCurrentPage();
 		};
 
 		qreal zoom();
@@ -68,15 +87,15 @@ class PdfView : public QScrollArea {
 	private:
 		PdfDocument *PdfDoc;
 		QHash<int, QImage> renderedImages;
-		QHash<int, QRectF> pageRects;
+		QHash<int, QLabel*> pages;
+
+		QList<int> visiblePages;
 
 		int currentPage;
 		qreal mZoom;
 
 		int mViewMode;
 		int mLytMode;
-
-		void getCurrentPage();
 
 		void reshapeView();
 
@@ -115,9 +134,9 @@ class PdfView : public QScrollArea {
 			setZoom( mZoom - 0.1 );
 		};
 
-	protected:
-		void paintEvent( QPaintEvent *pEvent );
+		void renderPages();
 
+	protected:
 		void resizeEvent( QResizeEvent *rEvent );
 		void wheelEvent( QWheelEvent *wEvent );
 

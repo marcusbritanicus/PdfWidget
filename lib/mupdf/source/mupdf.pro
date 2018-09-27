@@ -3,8 +3,6 @@ TARGET = mupdf
 
 VERSION = 1.13.0
 
-system( cd ../; sh generate.sh )
-
 INCLUDEPATH += . ../include/ cbz fitz gprf html pdf svg xps ../mujs /usr/include/freetype2 /usr/include/harfbuzz /usr/include/openjpeg-2.3/
 DEPENDPATH += . ../include/ cbz fitz gprf html pdf svg xps ../mujs
 

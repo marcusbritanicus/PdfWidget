@@ -2,6 +2,8 @@ PdfWidget v0.0.3
 	- PdfDocument no supports two backends, Poppler and MuPdf
 	- Encryption check enabled
 	- PdfView has been refined
+	- Supported view modes are SinglePage/DoublePage/FitPageToWidth/FitPageToHeight
+	- Supported layout modes are Continuous layout
 
 PdfWidget v0.0.2
 	- PdfDocument refined

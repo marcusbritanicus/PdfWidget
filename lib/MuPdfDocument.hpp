@@ -8,61 +8,45 @@
 
 #include <QtCore>
 #include <QtGui>
-#include <QtWidgets>
+
+#if QT_VERSION >= 0x050000
+	#include <QtWidgets>
+#endif
+
+#include "PdfDocument.hpp"
 
 extern "C" {
-	#include <mupdf/fitz.h>
+	#include "mupdf/fitz.h"
 }
-
-typedef struct {
-	fz_context *mCtx;
-	fz_document *mFzDoc;
-} MuDocument;
 
 typedef fz_page MuPage;
 
 typedef QList<MuPage*> MuPages;
 
-class MuPdfDocument : public QObject {
+class MuPdfDocument : public PdfDocument {
 	Q_OBJECT
 
 	public:
 		MuPdfDocument( QString );
 
-		bool passwordNeeded();
+		bool passwordNeeded() const;
 		void setPassword( QString password );
 
 		QString pdfName() const;
 		QString pdfPath() const;
 
-		MuDocument* document() {
-
-			memcpy( mDocument->mCtx, mCtx, sizeof( fz_context ) );
-			memcpy( mDocument->mFzDoc, mFzDoc, sizeof( fz_document ) );
-
-			return mDocument;
-		};
-
-		fz_page* page( int pageNo ) const;
-
-		/* MuPdf Pages */
-		MuPages allPages() {
-
-			return mPageList;
-		};
-
 		int pageCount() const;
 		QSizeF pageSize( int pageNo ) const;
 
-		QImage renderPage( int );
-		QImage renderPageForWidth( int, qreal );
-		QImage renderPageForHeight( int, qreal );
+		QImage renderPage( int ) const;
+		QImage renderPageForWidth( int, qreal ) const;
+		QImage renderPageForHeight( int, qreal ) const;
 
 		QString pageText( int pageNo ) const;
 		QString text( int pageNo, QRectF ) const;
 
-		qreal zoomForWidth( int pageNo, qreal width );
-		qreal zoomForHeight( int pageNo, qreal width );
+		qreal zoomForWidth( int pageNo, qreal width ) const;
+		qreal zoomForHeight( int pageNo, qreal width ) const;
 
 		qreal zoom() const {
 
@@ -82,8 +66,6 @@ class MuPdfDocument : public QObject {
 	private:
 		QString mPdfPath;
 
-		MuDocument *mDocument;
-
 		fz_context *mCtx;
 		fz_document *mFzDoc;
 
@@ -97,8 +79,4 @@ class MuPdfDocument : public QObject {
 
 	public Q_SLOTS:
 		void loadDocument();
-
-	Q_SIGNALS:
-		void pdfLoaded();
-		void loadFailed();
 };

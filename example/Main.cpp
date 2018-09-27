@@ -34,13 +34,29 @@ int main( int argc, char **argv ) {
 	QApplication app( argc, argv );
 
 	PdfView *view = new PdfView( NULL );
+	view->setObjectName( "PdfView" );
 
-	view->setViewMode( PdfView::SinglePageView );
+	view->setViewMode( PdfView::FitPageToHeight );
 	view->setLayoutMode( PdfView::Continuous );
 
-	view->setPdfDocument( new PdfDocument( argv[ 1 ], PdfDocument::MuPdfRenderBackend ) );
+	view->loadPdfDocument( argv[ 1 ], PdfView::MuPdfRenderBackend );
 
-	view->showMaximized();
+	QMainWindow *UI = new QMainWindow();
+	UI->setObjectName( "MainWindow" );
+	UI->setCentralWidget( view );
+	UI->setWindowTitle( "MiniPDf - " + QFileInfo( argv[ 1 ] ).fileName() );
+
+	QAction *zoomInAct = new QAction( UI );
+	zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
+	UI->connect( zoomInAct, SIGNAL( triggered() ), view, SLOT( slotZoomIn() ) );
+	UI->addAction( zoomInAct );
+
+	QAction *zoomOutAct = new QAction( UI );
+	zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
+	UI->connect( zoomOutAct, SIGNAL( triggered() ), view, SLOT( slotZoomOut() ) );
+	UI->addAction( zoomOutAct );
+
+	UI->showMaximized();
 
 	return app.exec();
 }
