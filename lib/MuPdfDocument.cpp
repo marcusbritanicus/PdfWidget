@@ -82,6 +82,15 @@ QSizeF MuPdfDocument::pageSize( int pageNum ) const {
 	return QSizeF( mZoom * ( rBox.x1 - rBox.x0 ), mZoom * ( rBox.y1 - rBox.y0 ) );
 };
 
+void MuPdfDocument::reload() {
+
+	mLoaded = false;
+	mPassNeeded = false;
+	mPages = 0;
+
+	loadDocument();
+};
+
 QImage MuPdfDocument::renderPage( int pgNo ) const {
 
 	fz_irect iBox;

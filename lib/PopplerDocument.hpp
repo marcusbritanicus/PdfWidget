@@ -43,6 +43,9 @@ class PopplerDocument : public PdfDocument {
 		/* Size of the page */
 		QSizeF pageSize( int pageNo ) const;
 
+		/* Reload the current document */
+		void reload();
+
 		/* Render and return a page */
 		QImage renderPage( int ) const;
 		QImage renderPageForWidth( int, qreal ) const;

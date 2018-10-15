@@ -33,6 +33,9 @@ class PdfDocument : public QObject {
 		/* Size of the page */
 		virtual QSizeF pageSize( int ) const = 0;
 
+		/* Reload the current document */
+		virtual void reload() = 0;
+
 		/* Render and return a page */
 		virtual QImage renderPage( int ) const = 0;
 

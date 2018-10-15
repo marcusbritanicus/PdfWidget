@@ -1,0 +1,59 @@
+/*
+	*
+	* Dialog.cpp - NewBreeze Dialog Class
+	*
+*/
+
+#include "Dialog.hpp"
+
+Dialog::Dialog( QWidget *parent ) : QDialog( parent ) {
+
+	setupGUI();
+	setupDialogProperties();
+};
+
+void Dialog::setupGUI() {
+
+	QAction *closeAct = new QAction( "&Close", this );
+	closeAct->setShortcut( QKeySequence( Qt::Key_Escape ) );
+	connect( closeAct, SIGNAL( triggered() ), this, SLOT( reject() ) );
+	addAction( closeAct );
+};
+
+void Dialog::setupDialogProperties() {
+
+	/* Dialogs without close button */
+	setWindowFlags( Qt::CustomizeWindowHint | Qt::Dialog | Qt::WindowSystemMenuHint | Qt::WindowTitleHint );
+
+	/* NewBreeze speciality */
+	setDialogIcon( QIcon( ":/icons/newbreeze.png" ) );
+
+	setWindowModality( Qt::ApplicationModal);
+
+	/* Size and Size policy */
+	setMinimumSize( 500, 75 );
+	setSizePolicy( QSizePolicy( QSizePolicy::MinimumExpanding, QSizePolicy::Fixed ) );
+};
+
+void Dialog::setLayout( QLayout *lyt ) {
+
+	lyt->setContentsMargins( QMargins( 5, 5, 5, 5 ) );
+	QDialog::setLayout( lyt );
+};
+
+void Dialog::setDialogTitle( QString title ) {
+
+	setWindowTitle( title );
+};
+
+void Dialog::setDialogIcon( QIcon icon ) {
+
+	setWindowIcon( icon );
+};
+
+void Dialog::closeEvent( QCloseEvent *cEvent ) {
+
+	QDialog::closeEvent( cEvent );
+
+	emit closed();
+};

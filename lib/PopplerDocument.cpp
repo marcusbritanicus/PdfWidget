@@ -63,6 +63,15 @@ QSizeF PopplerDocument::pageSize( int pageNo ) const {
 	return mPages.at( pageNo )->pageSizeF() * mZoom;
 };
 
+void PopplerDocument::reload() {
+
+	mLoaded = false;
+	mPassNeeded = false;
+	mPages.clear();
+
+	loadDocument();
+};
+
 QImage PopplerDocument::renderPage( int pageNo ) const {
 
 	return mPages.at( pageNo )->renderToImage( 72 * mZoom, 72 * mZoom );

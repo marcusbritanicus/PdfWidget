@@ -6,6 +6,5 @@ libpdfwidget*
 minipdf*
 build
 mupdf/build
-mupdf/generated
-libmupdf*
-*.png
+acrobat-flat.png
+.directory

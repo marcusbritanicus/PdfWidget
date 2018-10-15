@@ -38,6 +38,8 @@ class MuPdfDocument : public PdfDocument {
 		int pageCount() const;
 		QSizeF pageSize( int pageNo ) const;
 
+		void reload();
+
 		QImage renderPage( int ) const;
 		QImage renderPageForWidth( int, qreal ) const;
 		QImage renderPageForHeight( int, qreal ) const;

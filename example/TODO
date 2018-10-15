@@ -1,0 +1,9 @@
+MiniPDF v1 - ToDo
+=================
+
+  - Auto Reload changed files         [ G ]
+  - Add print and props actions       [ G ]
+
+[G] - Gui changes
+[M] - Option to be added to Menu
+[S] - Option to be added in Settings dialog

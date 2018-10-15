@@ -1,6 +1,6 @@
 /*
 	*
-	* Copyright 2017 Britanicus <marcusbritanicus@gmail.com>
+	* Copyright 2014 Britanicus <marcusbritanicus@gmail.com>
 	*
 
 	*
@@ -25,38 +25,37 @@
 	*
 */
 
-// Local Headers
-#include "PdfDocument.hpp"
-#include "PdfView.hpp"
+#include "MiniPdf.hpp"
+#include "MPApplication.hpp"
 
 int main( int argc, char **argv ) {
 
-	QApplication app( argc, argv );
+	/* Initialize the single application instance */
+	MPApplication app( argc, argv );
 
-	PdfView *view = new PdfView( NULL );
-	view->setObjectName( "PdfView" );
+	app.setOrganizationName( "MiniPdf" );
+	app.setApplicationName( "MiniPdf" );
 
-	view->setViewMode( PdfView::FitPageToHeight );
-	view->setLayoutMode( PdfView::Continuous );
+	/* We have no command line args */
+	if ( argc == 1 ) {
+		if ( app.sendMessage( QString() ) )
+			return 0;
+	}
 
-	view->loadPdfDocument( argv[ 1 ], PdfView::MuPdfRenderBackend );
+	/* If we have command line args, we re-route them to the original instance */
+	else if ( argc >= 1 ) {
 
-	QMainWindow *UI = new QMainWindow();
-	UI->setObjectName( "MainWindow" );
-	UI->setCentralWidget( view );
-	UI->setWindowTitle( "MiniPDf - " + QFileInfo( argv[ 1 ] ).fileName() );
+		QStringList files = app.arguments();
+		files.removeFirst();
+		if ( app.sendMessage( files.join( ";;" ) ) )
+			return 0;
+	}
 
-	QAction *zoomInAct = new QAction( UI );
-	zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
-	UI->connect( zoomInAct, SIGNAL( triggered() ), view, SLOT( slotZoomIn() ) );
-	UI->addAction( zoomInAct );
+	MiniPdf *Gui = new MiniPdf();
+	Gui->showMaximized();
 
-	QAction *zoomOutAct = new QAction( UI );
-	zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
-	UI->connect( zoomOutAct, SIGNAL( triggered() ), view, SLOT( slotZoomOut() ) );
-	UI->addAction( zoomOutAct );
-
-	UI->showMaximized();
+	QObject::connect( &app, SIGNAL( messageReceived( const QString ) ), Gui, SLOT( messageReciever( const QString ) ) );
+	app.setActivationWindow( Gui, true );
 
 	return app.exec();
-}
+};

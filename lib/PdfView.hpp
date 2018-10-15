@@ -51,6 +51,12 @@ class PdfView : public QScrollArea {
 
 		void loadPdfDocument( QString, RenderBackend );
 
+		void reload() {
+
+			if ( PdfDoc != 0 )
+				PdfDoc->reload();
+		};
+
 		int viewMode() const {
 
 			return mViewMode;
