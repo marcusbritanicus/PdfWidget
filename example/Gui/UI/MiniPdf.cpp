@@ -33,16 +33,6 @@ MiniPdf::MiniPdf() : QMainWindow() {
 	}
 };
 
-void MiniPdf::setWindowProperties() {
-
-	setWindowTitle( "MiniPdf" );
-	setWindowIcon( QIcon( ":/icons/minipdf.png" ) );
-
-	setWindowFlags( Qt::Window );
-
-	setMinimumSize( QSize( 800, 600 ) );
-};
-
 void MiniPdf::setupGui()  {
 
 	// Setup the tab widget
@@ -59,6 +49,16 @@ void MiniPdf::setupGui()  {
 	Base->setLayout( bLyt );
 
 	setCentralWidget( Base );
+};
+
+void MiniPdf::setWindowProperties() {
+
+	setWindowTitle( "MiniPdf" );
+	setWindowIcon( QIcon( ":/icons/minipdf.png" ) );
+
+	setWindowFlags( Qt::Window );
+
+	setMinimumSize( QSize( 800, 600 ) );
 };
 
 void MiniPdf::setupConnections() {
