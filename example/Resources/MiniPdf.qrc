@@ -40,15 +40,6 @@
 		<file>icons/text.png</file>
 		<file>icons/undo.png</file>
 		<file>icons/warning.png</file>
-		<file>icons/wordy.png</file>
 		<file>icons/wrench.png</file>
-
-		<file>StyleSheets/Buttons.qss</file>
-		<file>StyleSheets/Dialog.qss</file>
-		<file>StyleSheets/Editor.qss</file>
-		<file>StyleSheets/FileDialog.qss</file>
-		<file>StyleSheets/SearchReplace.qss</file>
-		<file>StyleSheets/TabWidget.qss</file>
-		<file>StyleSheets/MiniPdf.qss</file>
 	</qresource>
 </RCC>

@@ -230,16 +230,20 @@ QString MuPdfDocument::pageText( int pgNo ) const {
 
     QString ret;
 
+	fz_stext_page *spg;
+	fz_buffer *buff;
+	fz_output *output;
+
 	fz_try( mCtx ){
 
 		/* fz_stext_page */
-		fz_stext_page *spg = fz_new_stext_page_from_page( mCtx, mPageList.at( pgNo ), 0 );
+		spg = fz_new_stext_page_from_page( mCtx, mPageList.at( pgNo ), 0 );
 
 		/* Buffer 1MiB = 1 * 1024 * 1024 */
-		fz_buffer *buff = fz_new_buffer( mCtx, 1024 * 1024 );
+		buff = fz_new_buffer( mCtx, 1024 * 1024 );
 
 		/* Create fz_output */
-		fz_output *output = fz_new_output_with_buffer( mCtx, buff );
+		output = fz_new_output_with_buffer( mCtx, buff );
 
 		/* Print it to text buffer */
 		fz_print_stext_page_as_text( mCtx, output, spg );
@@ -247,16 +251,16 @@ QString MuPdfDocument::pageText( int pgNo ) const {
 		ret = QString::fromUtf8( fz_string_from_buffer( mCtx, buff ) );
 	}
 
+	fz_always( mCtx ) {
+
+		fz_drop_stext_page( mCtx, spg );
+		fz_drop_buffer( mCtx, buff );
+		fz_drop_output( mCtx, output );
+	}
+
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Unable to extract text from page: %s\n", fz_caught_message( mCtx ) ) ;
-	}
-
-	fz_always( mCtx ) {
-
-		fz_drop_buffer( buff );
-		fz_drop_output( output );
-		fz_drop_stext_page( spg );
 	}
 
     return ret;
