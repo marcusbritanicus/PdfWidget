@@ -4,7 +4,7 @@ TARGET = minipdf
 VERSION = 0.0.3
 
 INCLUDEPATH		+= /usr/include/poppler/qt5
-LIBS       		+= -L/usr/lib -lpoppler-qt5 -L../lib/ -lpdfwidget -lharfbuzz -lfreetype -lz -ljpeg -lopenjp2 -ljbig2dec
+LIBS       		+= -L/usr/lib -lpoppler-qt5 -L../lib/ -lpdfwidget -L../lib/mupdf/build/release
 TARGET			 = minipdf
 QT				+= network widgets printsupport
 
@@ -18,8 +18,6 @@ INCLUDEPATH += Gui/Widgets/Settings Gui/Widgets/TabWidget Gui/UI Resources Resou
 DEPENDPATH += . Core Core/MimeHandler Core/StandardPaths Core/Tools Gui Gui/Dialogs Gui/Editor Gui/Application Gui/Widgets
 DEPENDPATH += Gui/Widgets/Buttons Gui/Widgets/FileDialog Gui/Widgets/FileProps Gui/Widgets/Misc Gui/Widgets/RecentFiles
 DEPENDPATH += Gui/Widgets/Settings Gui/Widgets/TabWidget Gui/UI Resources Resources/icons Resources/StyleSheets
-
-CONFIG += console
 
 # Headers
 HEADERS += Core/Tools/Tools.hpp

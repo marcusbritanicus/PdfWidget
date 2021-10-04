@@ -137,7 +137,7 @@ void MiniPdf::loadFiles() {
 			continue;
 
 		PdfView *view = new PdfView( this );
-		view->loadPdfDocument( filesQueue[ i ], PdfView::MuPdfRenderBackend );
+		view->loadPdfDocument( filesQueue[ i ], PdfView::PopplerRenderBackend );
 
 		/* Zoom In */
 		QAction *zoomInAct = new QAction( view );

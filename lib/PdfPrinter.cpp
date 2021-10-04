@@ -18,14 +18,14 @@ PdfPrinter::PdfPrinter( QString path, int curPg, QWidget *parent ) : QDialog( pa
 
 void PdfPrinter::setupUI() {
 
-	/* Section 1 */
+	/** Section 1 */
 	QLabel *printersLbl = new QLabel( "P&rinter:" );
 	printersCB = new QComboBox();
 	Q_FOREACH( QPrinterInfo pInfo, QPrinterInfo::availablePrinters() )
-		printersCB->addItem( pInfo.printerName() );
+	printersCB->addItem( pInfo.printerName() );
 	printersLbl->setBuddy( printersCB );
 
-	/* Section 2: Left Column */
+	/** Section 2: Left Column */
 	pageRangeAllRB = new QRadioButton( "&All Pages" );
 	pageRangeAllRB->setChecked( true );
 	pageRangeCustomRB = new QRadioButton( "Pa&ges:" );
@@ -41,7 +41,7 @@ void PdfPrinter::setupUI() {
 	rangeLyt->addWidget( pageRangeCurrentRB, 2, 0, 1, 2 );
 	pageRangeGB->setLayout( rangeLyt );
 
-	/* Section 2: Right Column */
+	/** Section 2: Right Column */
 	singleRB = new QRadioButton( "&Single Side" );
 	singleRB->setChecked( true );
 	doubleRB = new QRadioButton( "&Back to back" );
@@ -53,7 +53,7 @@ void PdfPrinter::setupUI() {
 	duplexLyt->addWidget( new QLabel( "  " ) );
 	duplexGB->setLayout( duplexLyt );
 
-	/* Section 3: Orientation */
+	/** Section 3: Orientation */
 	potraitRB = new QRadioButton( "P&otrait" );
 	potraitRB->setChecked( true );
 	landscapeRB = new QRadioButton( "&Landscape" );
@@ -64,7 +64,7 @@ void PdfPrinter::setupUI() {
 	orientLyt->addWidget( landscapeRB );
 	orientGB->setLayout( orientLyt );
 
-	/* Section 4: Copies */
+	/** Section 4: Copies */
 	QLabel *copiesLbl = new QLabel( "&Number of copies:" );
 	copiesSB = new QSpinBox();
 	copiesSB->setRange( 1, 100 );
@@ -76,7 +76,7 @@ void PdfPrinter::setupUI() {
 	outputLyt->addWidget( copiesSB );
 	outputGB->setLayout( outputLyt );
 
-	/* Section 5: Buttons */
+	/** Section 5: Buttons */
 	cancelBtn = new QPushButton( QIcon::fromTheme( "dialog-cancel" ), "&Cancel" );
 	connect( cancelBtn, SIGNAL( clicked() ), this, SLOT( reject() ) );
 	printBtn = new QPushButton( QIcon::fromTheme( "document-print" ), "&Print" );
@@ -119,38 +119,38 @@ void PdfPrinter::setupUI() {
 
 void PdfPrinter::print() {
 
-	/* Printer and A4 paper */
+	/** Printer and A4 paper */
 	QStringList lprOpts;
 	lprOpts << "-P" << QString( "\"%1\"" ).arg( printersCB->currentText() );
 	lprOpts << "-h"; 																		// No banners
 	lprOpts << "-o" << "media=a4";
 	lprOpts << "-o" << "fit-to-page";
 
-	/* Page Range */
+	/** Page Range */
 	if ( pageRangeCustomRB->isChecked() )
 		lprOpts << "-o" << QString( "page-ranges=\"%1\"" ).arg( pageCustomLE->text() );
 
 	else if ( pageRangeCurrentRB->isChecked() )
 		lprOpts << "-o" << QString( "page-ranges=\"%1\"" ).arg( mCurrentPage );
 
-	// else /* By default all pages are printed */
-		// lprOpts << /* Nothing to be added here */
+	// else /** By default all pages are printed */
+		// lprOpts << /** Nothing to be added here */
 
-	/* Orientation and duplexing: Potrait */
+	/** Orientation and duplexing: Potrait */
 	if ( potraitRB->isChecked() ) {
 		lprOpts << "-o" << "potrait";
 		if ( doubleRB->isChecked() )
 			lprOpts << "-o" << "sides=two-sided-long-edge";
 	}
 
-	/* Orientation and duplexing: Landscape */
+	/** Orientation and duplexing: Landscape */
 	else {
 		lprOpts << "-o" << "landscape";
 		if ( doubleRB->isChecked() )
 			lprOpts << "-o" << "sides=two-sided-short-edge";
 	}
 
-	/* Number of copies */
+	/** Number of copies */
 	if ( copiesSB->value() > 1 ) {
 		lprOpts << "-#" << QString::number( copiesSB->value() );
 		lprOpts << "-o" << "collate=true";
