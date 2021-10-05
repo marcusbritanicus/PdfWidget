@@ -1,7 +1,7 @@
     /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 
@@ -32,6 +32,7 @@
 #include "Renderer.hpp"
 #include "Document.hpp"
 #include "PopplerDocument.hpp"
+#include "MuPdfDocument.hpp"
 #include "Navigation.hpp"
 #include "ViewWidgets.hpp"
 
@@ -40,13 +41,13 @@
 #include <QScrollBar>
 #include <QScroller>
 
-DesQDocs::ViewPrivate::ViewPrivate(): QAbstractScrollAreaPrivate() {
+PdfWidget::ViewPrivate::ViewPrivate(): QAbstractScrollAreaPrivate() {
 
     m_document = nullptr;
     m_pageNavigation = nullptr;
     m_pageRenderer = nullptr;
-    m_pageMode = DesQDocs::View::SinglePage;
-    m_zoomMode = DesQDocs::View::CustomZoom;
+    m_pageMode = PdfWidget::View::MultiPage;
+    m_zoomMode = PdfWidget::View::FitToWidth;
     m_zoomFactor = 1.0;
     m_pageSpacing = 3;
     m_documentMargins = QMargins( 6, 6, 6, 6 );
@@ -54,15 +55,15 @@ DesQDocs::ViewPrivate::ViewPrivate(): QAbstractScrollAreaPrivate() {
     m_screenResolution = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 72.0;
 };
 
-void DesQDocs::ViewPrivate::init() {
+void PdfWidget::ViewPrivate::init() {
 
     Q_Q( View );
 
-    m_pageNavigation = new DesQDocs::Navigation( q );
-    m_pageRenderer = new DesQDocs::Renderer( q );
+    m_pageNavigation = new PdfWidget::Navigation( q );
+    m_pageRenderer = new PdfWidget::Renderer( q );
 };
 
-void DesQDocs::ViewPrivate::documentStatusChanged() {
+void PdfWidget::ViewPrivate::documentStatusChanged() {
 
     Q_Q( View );
 
@@ -70,7 +71,7 @@ void DesQDocs::ViewPrivate::documentStatusChanged() {
     q->viewport()->update();
 };
 
-void DesQDocs::ViewPrivate::currentPageChanged( int currentPage ) {
+void PdfWidget::ViewPrivate::currentPageChanged( int currentPage ) {
 
     Q_Q( View );
 
@@ -79,11 +80,11 @@ void DesQDocs::ViewPrivate::currentPageChanged( int currentPage ) {
 
     q->verticalScrollBar()->setValue( yPositionForPage( currentPage ) );
 
-    if ( m_pageMode == DesQDocs::View::SinglePage )
+    if ( m_pageMode == PdfWidget::View::SinglePage )
         invalidateDocumentLayout();
 };
 
-void DesQDocs::ViewPrivate::calculateViewport() {
+void PdfWidget::ViewPrivate::calculateViewport() {
 
     Q_Q( View );
 
@@ -98,7 +99,7 @@ void DesQDocs::ViewPrivate::calculateViewport() {
     setViewport( QRect( x, y, width, height ) );
 };
 
-void DesQDocs::ViewPrivate::setViewport( QRect viewport ) {
+void PdfWidget::ViewPrivate::setViewport( QRect viewport ) {
 
     Q_Q( View );
 
@@ -112,15 +113,15 @@ void DesQDocs::ViewPrivate::setViewport( QRect viewport ) {
     if ( oldSize != m_viewport.size() ) {
         updateDocumentLayout();
 
-        if ( m_zoomMode != DesQDocs::View::CustomZoom ) {
+        if ( m_zoomMode != PdfWidget::View::CustomZoom ) {
             q->viewport()->update();
         }
     }
 
-    if ( m_pageMode == DesQDocs::View::MultiPage ) {
+    if ( m_pageMode == PdfWidget::View::MultiPage ) {
         // An imaginary, 2px height line at the upper half of the viewport, which is used to
         // determine which page is currently located there -> we propagate that as 'current' page
-        // to the DesQDocs::Navigation object
+        // to the PdfWidget::Navigation object
         const QRect currentPageLine( m_viewport.x(), m_viewport.y() + m_viewport.height() * 0.4, m_viewport.width(), 2 );
 
         int currentPage = 0;
@@ -140,7 +141,7 @@ void DesQDocs::ViewPrivate::setViewport( QRect viewport ) {
     }
 };
 
-void DesQDocs::ViewPrivate::updateScrollBars() {
+void PdfWidget::ViewPrivate::updateScrollBars() {
 
     Q_Q( View );
 
@@ -153,7 +154,7 @@ void DesQDocs::ViewPrivate::updateScrollBars() {
     q->verticalScrollBar()->setPageStep( p.height() );
 };
 
-void DesQDocs::ViewPrivate::invalidateDocumentLayout() {
+void PdfWidget::ViewPrivate::invalidateDocumentLayout() {
 
     Q_Q( View );
 
@@ -161,7 +162,7 @@ void DesQDocs::ViewPrivate::invalidateDocumentLayout() {
     q->viewport()->update();
 };
 
-DesQDocs::ViewPrivate::DocumentLayout DesQDocs::ViewPrivate::calculateDocumentLayout() const {
+PdfWidget::ViewPrivate::DocumentLayout PdfWidget::ViewPrivate::calculateDocumentLayout() const {
     // The DocumentLayout describes a virtual layout where all pages are positioned inside
     //    - For SinglePage mode, this is just an area as large as the current page surrounded
     //      by the m_documentMargins.
@@ -170,7 +171,7 @@ DesQDocs::ViewPrivate::DocumentLayout DesQDocs::ViewPrivate::calculateDocumentLa
 
     DocumentLayout documentLayout;
 
-    if ( !m_document || m_document->status() != DesQDocs::Document::Ready )
+    if ( !m_document || m_document->status() != PdfWidget::Document::Ready )
         return documentLayout;
 
     QHash<int, QRect> pageGeometries;
@@ -179,23 +180,23 @@ DesQDocs::ViewPrivate::DocumentLayout DesQDocs::ViewPrivate::calculateDocumentLa
 
     int totalWidth = 0;
 
-    const int startPage = ( m_pageMode == DesQDocs::View::SinglePage ? m_pageNavigation->currentPage() : 0 );
-    const int endPage = ( m_pageMode == DesQDocs::View::SinglePage ? m_pageNavigation->currentPage() + 1 : pageCount );
+    const int startPage = ( m_pageMode == PdfWidget::View::SinglePage ? m_pageNavigation->currentPage() : 0 );
+    const int endPage = ( m_pageMode == PdfWidget::View::SinglePage ? m_pageNavigation->currentPage() + 1 : pageCount );
 
     // calculate page sizes
     for ( int page = startPage; page < endPage; ++page ) {
         QSize pageSize;
-        if ( m_zoomMode == DesQDocs::View::CustomZoom ) {
+        if ( m_zoomMode == PdfWidget::View::CustomZoom ) {
             pageSize = QSizeF( m_document->pageSize( page ) * m_screenResolution * m_zoomFactor ).toSize();
         }
 
-        else if ( m_zoomMode == DesQDocs::View::FitToWidth ) {
+        else if ( m_zoomMode == PdfWidget::View::FitToWidth ) {
             pageSize = QSizeF( m_document->pageSize( page ) * m_screenResolution ).toSize();
             const qreal factor = ( qreal( m_viewport.width() - m_documentMargins.left() - m_documentMargins.right() ) / qreal( pageSize.width() ) );
             pageSize *= factor;
         }
 
-        else if ( m_zoomMode == DesQDocs::View::FitInView ) {
+        else if ( m_zoomMode == PdfWidget::View::FitInView ) {
             const QSize viewportSize( m_viewport.size() + QSize( -m_documentMargins.left() - m_documentMargins.right(), -m_pageSpacing ) );
 
             pageSize = QSizeF( m_document->pageSize( page ) * m_screenResolution ).toSize();
@@ -204,16 +205,16 @@ DesQDocs::ViewPrivate::DocumentLayout DesQDocs::ViewPrivate::calculateDocumentLa
 
         switch( m_renderOpts.rotation() ) {
             /* Normal */
-            case DesQDocs::RenderOptions::Rotate0:
-            case DesQDocs::RenderOptions::Rotate180: {
+            case PdfWidget::RenderOptions::Rotate0:
+            case PdfWidget::RenderOptions::Rotate180: {
                 totalWidth = qMax( totalWidth, pageSize.width() );
                 pageGeometries[page] = QRect( QPoint( 0, 0 ), pageSize );
                 break;
             }
 
             /* 90 degree rotated */
-            case DesQDocs::RenderOptions::Rotate90:
-            case DesQDocs::RenderOptions::Rotate270: {
+            case PdfWidget::RenderOptions::Rotate90:
+            case PdfWidget::RenderOptions::Rotate270: {
                 totalWidth = qMax( totalWidth, pageSize.height() );
                 pageGeometries[page] = QRect( 0, 0, pageSize.height(), pageSize.width() );
                 break;
@@ -245,7 +246,7 @@ DesQDocs::ViewPrivate::DocumentLayout DesQDocs::ViewPrivate::calculateDocumentLa
     return documentLayout;
 };
 
-qreal DesQDocs::ViewPrivate::yPositionForPage( int pageNumber ) const {
+qreal PdfWidget::ViewPrivate::yPositionForPage( int pageNumber ) const {
 
     const auto it = m_documentLayout.pageGeometries.constFind( pageNumber );
     if ( it == m_documentLayout.pageGeometries.cend() )
@@ -254,29 +255,29 @@ qreal DesQDocs::ViewPrivate::yPositionForPage( int pageNumber ) const {
     return ( *it ).y();
 };
 
-void DesQDocs::ViewPrivate::updateDocumentLayout() {
+void PdfWidget::ViewPrivate::updateDocumentLayout() {
 
     m_documentLayout = calculateDocumentLayout();
 
     updateScrollBars();
 };
 
-qreal DesQDocs::ViewPrivate::zoomFactor() const {
+qreal PdfWidget::ViewPrivate::zoomFactor() const {
 
     int page = m_pageNavigation->currentPage();
 
     QSize pageSize;
-    if ( m_zoomMode == DesQDocs::View::CustomZoom ) {
+    if ( m_zoomMode == PdfWidget::View::CustomZoom ) {
         return m_zoomFactor;
     }
 
-    else if ( m_zoomMode == DesQDocs::View::FitToWidth ) {
+    else if ( m_zoomMode == PdfWidget::View::FitToWidth ) {
         pageSize = QSizeF( m_document->pageSize( page ) * m_screenResolution ).toSize();
         const qreal factor = ( qreal( m_viewport.width() - m_documentMargins.left() - m_documentMargins.right() ) / qreal( pageSize.width() ) );
         return factor;
     }
 
-    else if ( m_zoomMode == DesQDocs::View::FitInView ) {
+    else if ( m_zoomMode == PdfWidget::View::FitInView ) {
         const QSize viewportSize( m_viewport.size() + QSize( -m_documentMargins.left() - m_documentMargins.right(), -m_pageSpacing ) );
 
         pageSize = QSizeF( m_document->pageSize( page ) * m_screenResolution ).toSize();
@@ -288,18 +289,18 @@ qreal DesQDocs::ViewPrivate::zoomFactor() const {
     return 1.0;
 };
 
-DesQDocs::View::View( QWidget *parent ) : QAbstractScrollArea( *new ViewPrivate(), parent ) {
+PdfWidget::View::View( QWidget *parent ) : QAbstractScrollArea( *new ViewPrivate(), parent ) {
 
     Q_D( View );
 
     d->init();
 
     /* Setup Page Navigation */
-    connect( d->m_pageNavigation, &DesQDocs::Navigation::currentPageChanged, this, [d]( int page ){ d->currentPageChanged( page ); } );
+    connect( d->m_pageNavigation, &PdfWidget::Navigation::currentPageChanged, this, [d]( int page ){ d->currentPageChanged( page ); } );
 
     /* Setup Page Renderer */
     connect(
-        d->m_pageRenderer, &DesQDocs::Renderer::pageRendered, [=]( int pageNo ) {
+        d->m_pageRenderer, &PdfWidget::Renderer::pageRendered, [=]( int pageNo ) {
 
             viewport()->update();
         }
@@ -332,8 +333,8 @@ DesQDocs::View::View( QWidget *parent ) : QAbstractScrollArea( *new ViewPrivate(
 
     /* Page buttons */
 	mPagesBtn = new PageWidget( this );
-	connect( d->m_pageNavigation, &DesQDocs::Navigation::currentPageChanged, mPagesBtn, &PageWidget::setCurrentPage );
-	connect( mPagesBtn, &PageWidget::loadPage, d->m_pageNavigation, &DesQDocs::Navigation::setCurrentPage );
+	connect( d->m_pageNavigation, &PdfWidget::Navigation::currentPageChanged, mPagesBtn, &PageWidget::setCurrentPage );
+	connect( mPagesBtn, &PageWidget::loadPage, d->m_pageNavigation, &PdfWidget::Navigation::setCurrentPage );
 
     /* ProgressBar */
     progress = new QProgressBar( this );
@@ -363,15 +364,21 @@ DesQDocs::View::View( QWidget *parent ) : QAbstractScrollArea( *new ViewPrivate(
     );
 };
 
-DesQDocs::View::View( ViewPrivate &dd, QWidget *parent ) : QAbstractScrollArea( dd, parent ) {
+PdfWidget::View::View( ViewPrivate &dd, QWidget *parent ) : QAbstractScrollArea( dd, parent ) {
 };
 
-DesQDocs::View::~View() {
+PdfWidget::View::~View() {
 };
 
-void DesQDocs::View::loadDocument( QString path ) {
+void PdfWidget::View::loadDocument( QString path, PdfWidget::View::Backend backend ) {
 
-	DesQDocs::Document *doc = new PopplerDocument( path );
+	PdfWidget::Document *doc;
+
+    if ( backend == PdfWidget::View::PopplerRenderBackend )
+       doc = new PopplerDocument( path );
+
+    else
+        doc = new MuPdfDocument( path );
 
     progress->show();
     connect(
@@ -393,7 +400,7 @@ void DesQDocs::View::loadDocument( QString path ) {
         do {
             QString passwd = QInputDialog::getText(
                 this,
-                "DesQDocs | Encrypted Document",
+                "PdfWidget | Encrypted Document",
                 QString( "%1Please enter the document password:" ).arg( count ? "You may have entered the wrong password.<br>" : "" ),
                 QLineEdit::Password,
                 QString(),
@@ -415,7 +422,7 @@ void DesQDocs::View::loadDocument( QString path ) {
     setDocument( doc );
 };
 
-void DesQDocs::View::setDocument( DesQDocs::Document *document ) {
+void PdfWidget::View::setDocument( PdfWidget::Document *document ) {
 
     Q_D( View );
 
@@ -432,10 +439,10 @@ void DesQDocs::View::setDocument( DesQDocs::Document *document ) {
 
     if ( d->m_document ) {
         d->m_documentStatusChangedConnection = connect(
-            d->m_document, &DesQDocs::Document::statusChanged, this, [=]( DesQDocs::Document::Status sts ) {
+            d->m_document, &PdfWidget::Document::statusChanged, this, [=]( PdfWidget::Document::Status sts ) {
                 d->documentStatusChanged();
 
-                if ( sts == DesQDocs::Document::Loading ) {
+                if ( sts == PdfWidget::Document::Loading ) {
                     progress->show();
                 }
 
@@ -446,7 +453,7 @@ void DesQDocs::View::setDocument( DesQDocs::Document *document ) {
         );
 
         d->m_reloadDocumentConnection = connect(
-            d->m_document, &DesQDocs::Document::reloadDocument, this, [ d ]() {
+            d->m_document, &PdfWidget::Document::reloadDocument, this, [ d ]() {
                 d->m_pageRenderer->reload();
             }
         );
@@ -461,28 +468,28 @@ void DesQDocs::View::setDocument( DesQDocs::Document *document ) {
 	mPagesBtn->setCurrentPage( d->m_pageNavigation->currentPage() );
 };
 
-DesQDocs::Document *DesQDocs::View::document() const {
+PdfWidget::Document *PdfWidget::View::document() const {
 
     Q_D( const View );
 
     return d->m_document;
 };
 
-DesQDocs::Navigation *DesQDocs::View::pageNavigation() const {
+PdfWidget::Navigation *PdfWidget::View::pageNavigation() const {
 
     Q_D( const View );
 
     return d->m_pageNavigation;
 };
 
-DesQDocs::View::PageMode DesQDocs::View::pageMode() const {
+PdfWidget::View::PageMode PdfWidget::View::pageMode() const {
 
     Q_D( const View );
 
     return d->m_pageMode;
 };
 
-void DesQDocs::View::setPageMode( PageMode mode ) {
+void PdfWidget::View::setPageMode( PageMode mode ) {
 
     Q_D( View );
 
@@ -495,14 +502,14 @@ void DesQDocs::View::setPageMode( PageMode mode ) {
     emit pageModeChanged( d->m_pageMode );
 };
 
-DesQDocs::View::ZoomMode DesQDocs::View::zoomMode() const {
+PdfWidget::View::ZoomMode PdfWidget::View::zoomMode() const {
 
     Q_D( const View );
 
     return d->m_zoomMode;
 };
 
-void DesQDocs::View::setZoomMode( ZoomMode mode ) {
+void PdfWidget::View::setZoomMode( ZoomMode mode ) {
 
     Q_D( View );
 
@@ -521,14 +528,14 @@ void DesQDocs::View::setZoomMode( ZoomMode mode ) {
     emit zoomModeChanged( d->m_zoomMode );
 };
 
-qreal DesQDocs::View::zoomFactor() const {
+qreal PdfWidget::View::zoomFactor() const {
 
     Q_D( const View );
 
     return d->m_zoomFactor;
 };
 
-void DesQDocs::View::setRenderOptions( DesQDocs::RenderOptions opts ) {
+void PdfWidget::View::setRenderOptions( PdfWidget::RenderOptions opts ) {
 
     Q_D( View );
 
@@ -541,13 +548,13 @@ void DesQDocs::View::setRenderOptions( DesQDocs::RenderOptions opts ) {
     emit renderOptionsChanged( d->m_renderOpts );
 };
 
-DesQDocs::RenderOptions DesQDocs::View::renderOptions() const {
+PdfWidget::RenderOptions PdfWidget::View::renderOptions() const {
 
     Q_D( const View );
     return d->m_renderOpts;
 };
 
-void DesQDocs::View::setZoomFactor( qreal factor ) {
+void PdfWidget::View::setZoomFactor( qreal factor ) {
 
     Q_D( View );
 
@@ -566,14 +573,14 @@ void DesQDocs::View::setZoomFactor( qreal factor ) {
     emit zoomFactorChanged( d->m_zoomFactor );
 };
 
-int DesQDocs::View::pageSpacing() const {
+int PdfWidget::View::pageSpacing() const {
 
     Q_D( const View );
 
     return d->m_pageSpacing;
 };
 
-void DesQDocs::View::setPageSpacing( int spacing ) {
+void PdfWidget::View::setPageSpacing( int spacing ) {
 
     Q_D( View );
 
@@ -586,14 +593,14 @@ void DesQDocs::View::setPageSpacing( int spacing ) {
     emit pageSpacingChanged( d->m_pageSpacing );
 };
 
-QMargins DesQDocs::View::documentMargins() const {
+QMargins PdfWidget::View::documentMargins() const {
 
     Q_D( const View );
 
     return d->m_documentMargins;
 };
 
-void DesQDocs::View::setDocumentMargins( QMargins margins ) {
+void PdfWidget::View::setDocumentMargins( QMargins margins ) {
 
     Q_D( View );
 
@@ -606,7 +613,7 @@ void DesQDocs::View::setDocumentMargins( QMargins margins ) {
     emit documentMarginsChanged( d->m_documentMargins );
 };
 
-void DesQDocs::View::paintEvent( QPaintEvent *event ) {
+void PdfWidget::View::paintEvent( QPaintEvent *event ) {
 
     Q_D( View );
 
@@ -628,7 +635,7 @@ void DesQDocs::View::paintEvent( QPaintEvent *event ) {
     }
 };
 
-void DesQDocs::View::resizeEvent( QResizeEvent *event ) {
+void PdfWidget::View::resizeEvent( QResizeEvent *event ) {
 
     Q_D( View );
 
@@ -659,7 +666,7 @@ void DesQDocs::View::resizeEvent( QResizeEvent *event ) {
     );
 };
 
-void DesQDocs::View::scrollContentsBy( int dx, int dy ) {
+void PdfWidget::View::scrollContentsBy( int dx, int dy ) {
 
     Q_D( View );
 
@@ -668,7 +675,7 @@ void DesQDocs::View::scrollContentsBy( int dx, int dy ) {
     d->calculateViewport();
 };
 
-void DesQDocs::View::keyPressEvent( QKeyEvent *kEvent ) {
+void PdfWidget::View::keyPressEvent( QKeyEvent *kEvent ) {
 
     Q_D( View );
 
@@ -723,7 +730,7 @@ void DesQDocs::View::keyPressEvent( QKeyEvent *kEvent ) {
     }
 };
 
-void DesQDocs::View::wheelEvent( QWheelEvent *wEvent ) {
+void PdfWidget::View::wheelEvent( QWheelEvent *wEvent ) {
 
     Q_D( View );
 

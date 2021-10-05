@@ -1,7 +1,7 @@
 /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 
@@ -36,7 +36,7 @@ class Zoom;
 class PageWidget;
 class QProgressBar;
 
-namespace DesQDocs {
+namespace PdfWidget {
     class Document;
     class Navigation;
     class Renderer;
@@ -45,12 +45,12 @@ namespace DesQDocs {
     class View : public QAbstractScrollArea {
         Q_OBJECT;
 
-        Q_PROPERTY( DesQDocs::Document* document READ document WRITE setDocument NOTIFY documentChanged );
+        Q_PROPERTY( PdfWidget::Document* document READ document WRITE setDocument NOTIFY documentChanged );
 
         Q_PROPERTY( PageMode pageMode READ pageMode WRITE setPageMode NOTIFY pageModeChanged );
         Q_PROPERTY( ZoomMode zoomMode READ zoomMode WRITE setZoomMode NOTIFY zoomModeChanged );
         Q_PROPERTY( qreal zoomFactor READ zoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged );
-        Q_PROPERTY( DesQDocs::RenderOptions renderOptions READ renderOptions WRITE setRenderOptions NOTIFY renderOptionsChanged );
+        Q_PROPERTY( PdfWidget::RenderOptions renderOptions READ renderOptions WRITE setRenderOptions NOTIFY renderOptionsChanged );
 
         Q_PROPERTY( int pageSpacing READ pageSpacing WRITE setPageSpacing NOTIFY pageSpacingChanged );
         Q_PROPERTY( QMargins documentMargins READ documentMargins WRITE setDocumentMargins NOTIFY documentMarginsChanged );
@@ -69,19 +69,25 @@ namespace DesQDocs {
             };
             Q_ENUM( ZoomMode );
 
+            enum Backend {
+                PopplerRenderBackend,
+                MuPdfRenderBackend
+            };
+            Q_ENUM( Backend );
+
             explicit View( QWidget *parent = nullptr );
             ~View();
 
-            void loadDocument( QString path );
-            void setDocument( DesQDocs::Document *document );
-            DesQDocs::Document *document() const;
+            void loadDocument( QString path, PdfWidget::View::Backend );
+            void setDocument( PdfWidget::Document *document );
+            PdfWidget::Document *document() const;
 
-            DesQDocs::Navigation *pageNavigation() const;
+            PdfWidget::Navigation *pageNavigation() const;
 
             PageMode pageMode() const;
             ZoomMode zoomMode() const;
             qreal zoomFactor() const;
-            DesQDocs::RenderOptions renderOptions() const;
+            PdfWidget::RenderOptions renderOptions() const;
 
             int pageSpacing() const;
             void setPageSpacing( int spacing );
@@ -93,14 +99,14 @@ namespace DesQDocs {
             void setPageMode( PageMode mode );
             void setZoomMode( ZoomMode mode );
             void setZoomFactor( qreal factor );
-            void setRenderOptions( DesQDocs::RenderOptions opts );
+            void setRenderOptions( PdfWidget::RenderOptions opts );
 
         Q_SIGNALS:
-            void documentChanged( DesQDocs::Document *document );
+            void documentChanged( PdfWidget::Document *document );
             void pageModeChanged( PageMode pageMode );
             void zoomModeChanged( ZoomMode zoomMode );
             void zoomFactorChanged( qreal zoomFactor );
-            void renderOptionsChanged( DesQDocs::RenderOptions opts );
+            void renderOptionsChanged( PdfWidget::RenderOptions opts );
             void pageSpacingChanged( int pageSpacing );
             void documentMarginsChanged( QMargins documentMargins );
 

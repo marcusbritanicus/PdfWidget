@@ -1,25 +1,38 @@
-﻿/*
-	*
-	* MuPdfDocument.cpp - MuPDF Document Qt interface
-	*
+/*
+    *
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
+    * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
+    *
+
+    *
+    * This program is free software; you can redistribute it and/or modify
+    * it under the terms of the GNU General Public License as published by
+    * the Free Software Foundation; either version 2 of the License, or
+    * at your option, any later version.
+    *
+
+    *
+    * This program is distributed in the hope that it will be useful,
+    * but WITHOUT ANY WARRANTY; without even the implied warranty of
+    * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    * GNU General Public License for more details.
+    *
+
+    *
+    * You should have received a copy of the GNU General Public License
+    * along with this program; if not, write to the Free Software
+    * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+    * MA 02110-1301, USA.
+    *
 */
 
 #include "MuPdfDocument.hpp"
 
-MuPdfDocument::MuPdfDocument( QString pdfPath ) : PdfDocument( pdfPath ) {
+MuPdfDocument::MuPdfDocument( QString pdfPath ) : PdfWidget::Document( pdfPath ) {
 
-	mZoom = 1.0;
-
-	mLoaded = false;
-	mPassNeeded = false;
-	mPages = 0;
-
-	mPdfPath = QString( pdfPath );
-};
-
-bool MuPdfDocument::passwordNeeded() const {
-
-	return mPassNeeded;
+	mCtx = nullptr;
+	mFzDoc = nullptr;
 };
 
 void MuPdfDocument::setPassword( QString password ) {
@@ -27,71 +40,238 @@ void MuPdfDocument::setPassword( QString password ) {
 	if ( not fz_authenticate_password( mCtx, mFzDoc, password.toUtf8().constData() ) ) {
 		fprintf( stderr, "Invalid password. Please try again.\n" );
 		mPassNeeded = true;
-		emit loadFailed();
+		emit statusChanged( Error );
 
 		return;
 	}
 
-	for( int i = 0; i < mPages; i++ ) {
-		fz_page *page = 0;
+	for( int i = 0; i < mPageCount; i++ ) {
+		fz_page *pg;
 
-		fz_try( mCtx )
-			page = fz_load_page( mCtx, mFzDoc, i );
+		fz_try( mCtx ) {
+
+			pg = fz_load_page( mCtx, mFzDoc, i );
+		}
 
 		fz_catch( mCtx ) {
 			fprintf( stderr, "Cannot create page: %s\n", fz_caught_message( mCtx ) );
 
 			fz_drop_document( mCtx, mFzDoc );
-			fz_drop_page( mCtx, page );
+			fz_drop_page( mCtx, pg );
 			fz_drop_context( mCtx );
 
-			emit loadFailed();
+			emit statusChanged( Error );
 			return;
 		}
 
-		mPageList << page;
+		/** Create MuPage isntance */
+		MuPage *page = new MuPage( mCtx, pg, i );
+		mPages << page;
+
+		/** Drop reference to pg */
+		fz_drop_page( mCtx, pg );
+
+		emit loading( 1.0 * i / mPageCount * 100.0 );
 	}
 
-	emit pdfLoaded();
-	mLoaded = true;
+	mStatus = Ready;
+	mDocError = NoError;
+
+	emit statusChanged( Ready );
+	emit pageCountChanged( mPages.count() );
+	emit loading( 100 );
 };
 
-QString MuPdfDocument::pdfName() const {
+QString MuPdfDocument::title() const {
 
-	return QFileInfo( mPdfPath ).baseName();
+	char buf[1024] = { 0 };
+	fz_lookup_metadata( mCtx, mFzDoc, "info:Title", buf, 1024 );
+
+	return buf;
 };
 
-QString MuPdfDocument::pdfPath() const {
+QString MuPdfDocument::author() const {
 
-	return QFileInfo( mPdfPath ).absolutePath();
+	char buf[1024] = { 0 };
+	fz_lookup_metadata( mCtx, mFzDoc, "info:Author", buf, 1024 );
+
+	return buf;
 };
 
-int MuPdfDocument::pageCount() const {
+QString MuPdfDocument::creator() const {
 
-	return mPages;
+	char buf[1024] = { 0 };
+	fz_lookup_metadata( mCtx, mFzDoc, "info:Creator", buf, 1024 );
+
+	return buf;
 };
 
-QSizeF MuPdfDocument::pageSize( int pageNum ) const {
+QString MuPdfDocument::producer() const {
 
-	if ( pageNum >= mPages )
-		return QSizeF();
+	char buf[1024] = { 0 };
+	fz_lookup_metadata( mCtx, mFzDoc, "info:Producer", buf, 1024 );
 
-	fz_rect rBox;
-	rBox = fz_bound_page( mCtx, mPageList.at( pageNum ) );
-
-	return QSizeF( mZoom * ( rBox.x1 - rBox.x0 ), mZoom * ( rBox.y1 - rBox.y0 ) );
+	return buf;
 };
 
-void MuPdfDocument::reload() {
+QString MuPdfDocument::created() const {
 
-	mLoaded = false;
-	mPassNeeded = false;
-	mPages = 0;
+	char buf[1024] = { 0 };
+	fz_lookup_metadata( mCtx, mFzDoc, "info:CreationDate", buf, 1024 );
 
-	loadDocument();
+	return buf;
 };
 
-QImage MuPdfDocument::renderPage( int pgNo ) const {
+void MuPdfDocument::load() {
+
+	/** Create context */
+	mCtx = fz_new_context( NULL, NULL, FZ_STORE_UNLIMITED );
+	if ( not mCtx ) {
+		fprintf( stderr, "Cannot create mupdf context\n" );
+		emit statusChanged( Error );
+		return;
+	}
+
+	/** Register the default file types to handle. */
+	fz_try( mCtx ){
+
+		fz_register_document_handlers( mCtx );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Cannot register document handlers: %s\n", fz_caught_message( mCtx ) ) ;
+
+		fz_drop_context( mCtx );
+
+		emit statusChanged( Error );
+		return;
+	}
+
+	/** Open the document. */
+	fz_try( mCtx ) {
+		mFzDoc = fz_open_document( mCtx, mDocPath.toUtf8().constData() );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Cannot open document: %s\n", fz_caught_message( mCtx ) );
+
+		fz_drop_context( mCtx );
+
+		emit statusChanged( Error );
+		return;
+	}
+
+	/** Count the number of pages. */
+	fz_try( mCtx ) {
+		mPageCount = fz_count_pages( mCtx, mFzDoc );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Cannot count number of pages: %s\n", fz_caught_message( mCtx ) );
+
+		fz_drop_document( mCtx, mFzDoc );
+		fz_drop_context( mCtx );
+
+		emit statusChanged( Error );
+		return;
+	}
+
+	/** Check if the document is encrypted */
+	if ( fz_needs_password( mCtx, mFzDoc ) ) {
+		fprintf( stderr, "Cannot load encrypted document\n" );
+
+		fz_drop_document( mCtx, mFzDoc );
+		fz_drop_context( mCtx );
+
+		mStatus = Error;
+		mDocError = IncorrectPasswordError;
+		mPassNeeded = true;
+
+		emit passwordRequired();
+		emit statusChanged( Error );
+
+		return;
+	}
+
+	for( int i = 0; i < mPageCount; i++ ) {
+		fz_page *pg;
+
+		fz_try( mCtx ) {
+
+			pg = fz_load_page( mCtx, mFzDoc, i );
+		}
+
+		fz_catch( mCtx ) {
+			fprintf( stderr, "Cannot create page: %s\n", fz_caught_message( mCtx ) );
+
+			fz_drop_document( mCtx, mFzDoc );
+			fz_drop_page( mCtx, pg );
+			fz_drop_context( mCtx );
+
+			emit statusChanged( Error );
+			return;
+		}
+
+		/** Create MuPage isntance */
+		MuPage *page = new MuPage( mCtx, pg, i );
+		mPages << page;
+
+		/** Drop reference to pg */
+		fz_drop_page( mCtx, pg );
+
+		emit loading( 1.0 * i / mPageCount * 100.0 );
+	}
+
+	mStatus = Ready;
+	mDocError = NoError;
+
+	emit statusChanged( Ready );
+	emit pageCountChanged( mPages.count() );
+	emit loading( 100 );
+};
+
+void MuPdfDocument::close() {
+
+	mStatus = Unloading;
+	mPages.clear();
+	mZoom = 1.0;
+
+	fz_drop_document( mCtx, mFzDoc );
+	fz_drop_context( mCtx );
+};
+
+
+MuPage::MuPage( fz_context *ctx, fz_page *pg, int pgNo ) : Page( pgNo ) {
+
+	mCtx = ctx;
+	mPage = fz_keep_page( ctx, pg );
+};
+
+MuPage::~MuPage() {
+
+	fz_drop_page( mCtx, mPage );
+	fz_drop_context( mCtx );
+};
+
+QSizeF MuPage::pageSize( qreal zoom ) const {
+
+	fz_rect pgBox = fz_bound_page( mCtx, mPage );
+	return QSizeF( pgBox.x1 - pgBox.x0, pgBox.y1 - pgBox.y0 ) * zoom;
+};
+
+QImage MuPage::thumbnail() const {
+
+	// return mPage->thumbnail();
+	return QImage();
+};
+
+QImage MuPage::render( QSize pSize, PdfWidget::RenderOptions opts ) const {
+
+	qreal wZoom = 1.0 * pSize.width() / pageSize().width();
+	qreal hZoom = 1.0 * pSize.height() / pageSize().height();
 
 	fz_irect iBox;
 	fz_rect rBox;
@@ -101,42 +281,61 @@ QImage MuPdfDocument::renderPage( int pgNo ) const {
 
     colorspace = fz_device_bgr( mCtx );
 
-	MuPage *pg = mPageList.at( pgNo );
+	/** Otherwise, the page renders incorrectly */
+	qreal rwZoom = pow( wZoom, 0.5 );
+	qreal rhZoom = pow( hZoom, 0.5 );
 
-	qreal realZoom = pow( mZoom, 0.5 );
+	/** Setup the rotation */
+	switch( ( PdfWidget::RenderOptions::Rotation )opts.rotation() ) {
+		case PdfWidget::RenderOptions::Rotate0:
+			mMtx = fz_rotate( 0 );
+			break;
 
-	mMtx = fz_rotate( 0 );
-	mMtx = fz_scale( realZoom, realZoom );
+		case PdfWidget::RenderOptions::Rotate90:
+			mMtx = fz_rotate( 90 );
+			break;
 
-	rBox = fz_bound_page( mCtx, pg );
+		case PdfWidget::RenderOptions::Rotate180:
+			mMtx = fz_rotate( 180 );
+			break;
+
+		case PdfWidget::RenderOptions::Rotate270:
+			mMtx = fz_rotate( 270 );
+			break;
+	}
+
+	mMtx = fz_scale( rwZoom, rhZoom );
+
+	rBox = fz_bound_page( mCtx, mPage );
 	iBox = fz_round_rect( fz_transform_rect( rBox, mMtx ) );
 	rBox = fz_rect_from_irect( iBox );
 
-	/* Necessary: otherwise only a part of the page is rendered */
-	iBox.x1 *= realZoom;
-	iBox.y1 *= realZoom;
+	/** Necessary: otherwise only a part of the page is rendered */
+	iBox.x1 *= rwZoom;
+	iBox.y1 *= rhZoom;
 
 	fz_try( mCtx ) {
 		image = fz_new_pixmap_with_bbox( mCtx, colorspace, iBox, 0, 1 );
 		fz_clear_pixmap_with_value( mCtx, image, 0xff );
 		fz_device *dev = fz_new_draw_device_with_bbox( mCtx, mMtx, image, &iBox );
 
-		fz_run_page( mCtx, pg, dev, mMtx, NULL );
+		fz_run_page( mCtx, mPage, dev, mMtx, NULL );
 	}
 
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Cannot render page: %s\n", fz_caught_message( mCtx ) ) ;
-		fz_drop_page( mCtx, pg );
+		fz_drop_page( mCtx, mPage );
 		fz_drop_colorspace( mCtx, colorspace );
 		return QImage();
 	}
 
 	QImage img = QImage( image->samples, ( iBox.x1 - iBox.x0 ), ( iBox.y1 - iBox.y0 ), QImage::Format_ARGB32 );
+
 	return img;
 };
 
-QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) const {
+QImage MuPage::render( qreal zoomFactor, PdfWidget::RenderOptions opts ) const {
 
 	fz_irect iBox;
 	fz_rect rBox;
@@ -146,105 +345,79 @@ QImage MuPdfDocument::renderPageForWidth( int pgNo, qreal width ) const {
 
     colorspace = fz_device_bgr( mCtx );
 
-	MuPage *pg = mPageList.at( pgNo );
+	/** Otherwise, the page renders incorrectly */
+	qreal rwZoom = pow( zoomFactor, 0.5 );
+	qreal rhZoom = pow( zoomFactor, 0.5 );
 
-	qreal realZoom = pow( zoomForWidth( pgNo, width ), 0.5 );
+	/** Setup the rotation */
+	switch( ( PdfWidget::RenderOptions::Rotation )opts.rotation() ) {
+		case PdfWidget::RenderOptions::Rotate0:
+			mMtx = fz_rotate( 0 );
+			break;
 
-	mMtx = fz_rotate( 0 );
-	mMtx = fz_scale( realZoom, realZoom );
+		case PdfWidget::RenderOptions::Rotate90:
+			mMtx = fz_rotate( 90 );
+			break;
 
-	rBox = fz_bound_page( mCtx, pg );
+		case PdfWidget::RenderOptions::Rotate180:
+			mMtx = fz_rotate( 180 );
+			break;
+
+		case PdfWidget::RenderOptions::Rotate270:
+			mMtx = fz_rotate( 270 );
+			break;
+	}
+
+	mMtx = fz_scale( rwZoom, rhZoom );
+
+	rBox = fz_bound_page( mCtx, mPage );
 	iBox = fz_round_rect( fz_transform_rect( rBox, mMtx ) );
 	rBox = fz_rect_from_irect( iBox );
 
-	/* Necessary: otherwise only a part of the page is rendered */
-	iBox.x1 *= realZoom;
-	iBox.y1 *= realZoom;
+	/** Necessary: otherwise only a part of the page is rendered */
+	iBox.x1 *= rwZoom;
+	iBox.y1 *= rhZoom;
 
 	fz_try( mCtx ) {
 		image = fz_new_pixmap_with_bbox( mCtx, colorspace, iBox, 0, 1 );
 		fz_clear_pixmap_with_value( mCtx, image, 0xff );
 		fz_device *dev = fz_new_draw_device_with_bbox( mCtx, mMtx, image, &iBox );
 
-		fz_run_page( mCtx, pg, dev, mMtx, NULL );
+		fz_run_page( mCtx, mPage, dev, mMtx, NULL );
 	}
 
 	fz_catch( mCtx ) {
 
 		fprintf( stderr, "Cannot render page: %s\n", fz_caught_message( mCtx ) ) ;
-		fz_drop_page( mCtx, pg );
+		fz_drop_page( mCtx, mPage );
 		fz_drop_colorspace( mCtx, colorspace );
 		return QImage();
 	}
 
 	QImage img = QImage( image->samples, ( iBox.x1 - iBox.x0 ), ( iBox.y1 - iBox.y0 ), QImage::Format_ARGB32 );
+
 	return img;
 };
 
-QImage MuPdfDocument::renderPageForHeight( int pgNo, qreal height ) const {
+QString MuPage::pageText() const {
 
-	fz_irect iBox;
-	fz_rect rBox;
-	fz_pixmap *image;
-	fz_colorspace *colorspace;
-	fz_matrix mMtx;
-
-    colorspace = fz_device_bgr( mCtx );
-
-	MuPage *pg = mPageList.at( pgNo );
-
-	qreal realZoom = pow( zoomForHeight( pgNo, height ), 0.5 );
-
-	mMtx = fz_rotate( 0 );
-	mMtx = fz_scale( realZoom, realZoom );
-
-	rBox = fz_bound_page( mCtx, pg );
-	iBox = fz_round_rect( fz_transform_rect( rBox, mMtx ) );
-	rBox = fz_rect_from_irect( iBox );
-
-	/* Necessary: otherwise only a part of the page is rendered */
-	iBox.x1 *= realZoom;
-	iBox.y1 *= realZoom;
-
-	fz_try( mCtx ) {
-		image = fz_new_pixmap_with_bbox( mCtx, colorspace, iBox, 0, 1 );
-		fz_clear_pixmap_with_value( mCtx, image, 0xff );
-		fz_device *dev = fz_new_draw_device_with_bbox( mCtx, mMtx, image, &iBox );
-
-		fz_run_page( mCtx, pg, dev, mMtx, NULL );
-	}
-
-	fz_catch( mCtx ) {
-
-		fprintf( stderr, "Cannot render page: %s\n", fz_caught_message( mCtx ) ) ;
-		fz_drop_page( mCtx, pg );
-		fz_drop_colorspace( mCtx, colorspace );
-		return QImage();
-	}
-
-	QImage img = QImage( image->samples, ( iBox.x1 - iBox.x0 ), ( iBox.y1 - iBox.y0 ), QImage::Format_ARGB32 );
-	return img;
-};
-
-QString MuPdfDocument::pageText( int pgNo ) const {
-
-    QString ret;
+	QString ret;
     fz_stext_page *spg = NULL;
     fz_buffer *buff = NULL;
     fz_output *output = NULL;
 
 	fz_try( mCtx ) {
 
-		/* fz_stext_page */
-		spg = fz_new_stext_page_from_page( mCtx, mPageList.at( pgNo ), 0 );
+		/** fz_stext_page */
+		spg = fz_new_stext_page_from_page( mCtx, mPage, 0 );
 
-		/* Buffer 1MiB = 1 * 1024 * 1024 */
+		/** Buffer 1MiB = 1 * 1024 * 1024 */
 		buff = fz_new_buffer( mCtx, 1024 * 1024 );
 
-		/* Create fz_output */
+		/** Create fz_output */
 		output = fz_new_output_with_buffer( mCtx, buff );
 
-		/* Print it to text buffer */
+		/** Print it to text buffer */
 		fz_print_stext_page_as_text( mCtx, output, spg );
 
 		ret = QString::fromUtf8( fz_string_from_buffer( mCtx, buff ) );
@@ -265,140 +438,67 @@ QString MuPdfDocument::pageText( int pgNo ) const {
     return ret;
 };
 
-QString MuPdfDocument::text( int pgNo, QRectF rect ) const{
+QString MuPage::text( QRectF rect ) const {
 
-    QString ret;
+	QString ret;
+	fz_stext_page *textPage;
     fz_point a, b;
     char *str;
-
-    MuPage *pg = mPageList.at( pgNo );
-    fz_stext_page *textPage = fz_new_stext_page_from_page( mCtx, pg, 0 );
 
 	a.x = rect.left();
 	a.y = rect.top();
 	b.x = rect.right();
 	b.y = rect.bottom();
 
-	str = fz_copy_selection( mCtx, textPage, a, b, 0);
-	ret = QString::fromUtf8( str );
-	free( str );
+	fz_try( mCtx ) {
+		/** Structured text page */
+    	textPage = fz_new_stext_page_from_page( mCtx, mPage, 0 );
 
-	fz_drop_stext_page( mCtx, textPage );
+		/** Copy the text from selection */
+		str = fz_copy_selection( mCtx, textPage, a, b, 0);
+	}
+
+	fz_always( mCtx ) {
+		ret = QString::fromUtf8( str );
+		free( str );
+		fz_drop_stext_page( mCtx, textPage );
+	}
+
+	fz_catch( mCtx ) {
+
+		fprintf( stderr, "Unable to extract text from page: %s\n", fz_caught_message( mCtx ) );
+	}
 
     return ret;
 };
 
-qreal MuPdfDocument::zoomForWidth( int pageNo, qreal width ) const {
+QList<QRectF> MuPage::search( QString query, PdfWidget::RenderOptions opts ) const {
 
-	if ( pageNo >= mPages )
-		return 0.0;
+	QList<QRectF> ret;
+    fz_stext_page *spg = NULL;
+    fz_quad quads[ 1024 ] = { 0 };
+	int count = 0;
 
-	fz_rect rBox;
-	rBox = fz_bound_page( mCtx, mPageList.at( pageNo ) );
+	int fz_search_stext_page(fz_context *ctx, fz_stext_page *text, const char *needle, fz_quad *quads, int max_quads);
 
-	return 1.0 * width / ( rBox.x1 - rBox.x0 );
-};
-
-qreal MuPdfDocument::zoomForHeight( int pageNo, qreal height ) const {
-
-	if ( pageNo >= mPages )
-		return 0.0;
-
-	fz_rect rBox;
-	rBox = fz_bound_page( mCtx, mPageList.at( pageNo ) );
-
-	return 1.0 * height / ( rBox.y1 - rBox.y0 );
-};
-
-void MuPdfDocument::loadDocument() {
-
-	/* Create context */
-	mCtx = fz_new_context( NULL, NULL, FZ_STORE_UNLIMITED );
-	if ( not mCtx ) {
-		fprintf( stderr, "Cannot create mupdf context\n" );
-		emit loadFailed();
-		return;
-	}
-
-	/* Register the default file types to handle. */
-	fz_try( mCtx ){
-
-		fz_register_document_handlers( mCtx );
-	}
-
-	fz_catch( mCtx ) {
-
-		fprintf( stderr, "Cannot register document handlers: %s\n", fz_caught_message( mCtx ) ) ;
-
-		fz_drop_context( mCtx );
-
-		emit loadFailed();
-		return;
-	}
-
-	/* Open the document. */
 	fz_try( mCtx ) {
-		mFzDoc = fz_open_document( mCtx, mPdfPath.toUtf8().constData() );
+
+		/** fz_stext_page */
+		spg = fz_new_stext_page_from_page( mCtx, mPage, 0 );
+
+		/** Search the text in this page */
+		count = fz_search_stext_page( mCtx, spg, query.toUtf8().data(), quads, 1024 );
+	}
+
+	fz_always( mCtx ) {
+
+		fz_drop_stext_page( mCtx, spg );
 	}
 
 	fz_catch( mCtx ) {
 
-		fprintf( stderr, "Cannot open document: %s\n", fz_caught_message( mCtx ) );
-
-		fz_drop_context( mCtx );
-
-		emit loadFailed();
-		return;
+		fprintf( stderr, "Unable to search text in page: %s\n", fz_caught_message( mCtx ) );
 	}
 
-	/* Count the number of pages. */
-	fz_try( mCtx ) {
-		mPages = fz_count_pages( mCtx, mFzDoc );
-	}
-
-	fz_catch( mCtx ) {
-
-		fprintf( stderr, "Cannot count number of pages: %s\n", fz_caught_message( mCtx ) );
-
-		fz_drop_document( mCtx, mFzDoc );
-		fz_drop_context( mCtx );
-
-		emit loadFailed();
-		return;
-	}
-
-	/* Check if the document is encrypted */
-	if ( fz_needs_password( mCtx, mFzDoc ) ) {
-		fprintf( stderr, "Cannot load encrypted document\n" );
-
-		fz_drop_document( mCtx, mFzDoc );
-		fz_drop_context( mCtx );
-
-		mPassNeeded = true;
-		emit loadFailed();
-		return;
-	}
-
-	for( int i = 0; i < mPages; i++ ) {
-		fz_page *page = 0;
-
-		fz_try( mCtx )
-			page = fz_load_page( mCtx, mFzDoc, i );
-
-		fz_catch( mCtx ) {
-			fprintf( stderr, "Cannot create page: %s\n", fz_caught_message( mCtx ) );
-
-			fz_drop_document( mCtx, mFzDoc );
-			fz_drop_page( mCtx, page );
-			fz_drop_context( mCtx );
-
-			emit loadFailed();
-			return;
-		}
-
-		mPageList << page;
-	}
-
-	emit pdfLoaded();
-	mLoaded = true;
+    return ret;
 };

@@ -8,7 +8,9 @@
 
 #include "Global.hpp"
 
-#include "PdfView.hpp"
+#include <pdfwidget/View.hpp>
+#include <pdfwidget/Document.hpp>
+
 #include "TabWidget.hpp"
 #include "GuiWidgets.hpp"
 #include "Settings.hpp"

@@ -38,8 +38,8 @@ set ( SOURCES
     Document/Document.cpp
     Document/Navigation.cpp
     Document/Renderer.cpp
-    # MuPdf/MuPdfDocument.cpp
-    # MuPdf/MuPdfDocument.hpp
+    MuPdf/MuPdfDocument.cpp
+    MuPdf/MuPdfDocument.hpp
     Poppler/PopplerDocument.cpp
     Poppler/PopplerDocument.hpp
     View/View.cpp
@@ -62,7 +62,12 @@ set_target_properties( pdfwidget PROPERTIES VERSION ${PROJECT_VERSION} )
 set_target_properties( pdfwidget PROPERTIES SOVERSION ${PROJECT_VERSION} )
 set_target_properties( pdfwidget PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR_MINOR} )
 set_target_properties( pdfwidget PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
-target_link_libraries( pdfwidget Qt5::Core Qt5::Gui Qt5::Widgets Qt5::GuiPrivate Qt5::WidgetsPrivate )
+target_link_libraries(
+    pdfwidget
+    Qt5::Core Qt5::Gui Qt5::Widgets Qt5::GuiPrivate Qt5::WidgetsPrivate
+    poppler-qt5
+    mupdf freetype z harfbuzz jpeg openjp2 jbig2dec mujs desq-core
+)
 
 install( TARGETS pdfwidget EXPORT LIBRARY )
 install( FILES ${HEADERS} DESTINATION include/pdfwidget/ )

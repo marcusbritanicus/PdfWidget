@@ -34,7 +34,7 @@
 
 class RenderTask;
 
-namespace DesQDocs {
+namespace PdfWidget {
     class Document;
 
     class Renderer: public QObject {

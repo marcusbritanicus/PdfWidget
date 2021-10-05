@@ -32,7 +32,7 @@
 #include "Renderer.hpp"
 #include "RenderOptions.hpp"
 
-namespace DesQDocs {
+namespace PdfWidget {
     class Page;
 }
 
@@ -40,7 +40,7 @@ class RenderTask : public QObject, public QRunnable {
     Q_OBJECT;
 
     public:
-        RenderTask( DesQDocs::Page *pg, QSize imgSz, DesQDocs::RenderOptions opts, qint64 id );
+        RenderTask( PdfWidget::Page *pg, QSize imgSz, PdfWidget::RenderOptions opts, qint64 id );
 
         int pageNumber();
         qint64 requestId();
@@ -51,9 +51,9 @@ class RenderTask : public QObject, public QRunnable {
         void run();
 
     private:
-        DesQDocs::Page *mPage;
+        PdfWidget::Page *mPage;
         QSize mImgSize;
-        DesQDocs::RenderOptions mOpts;
+        PdfWidget::RenderOptions mOpts;
         qint64 mId;
 
     Q_SIGNALS:

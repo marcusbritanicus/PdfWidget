@@ -1,7 +1,7 @@
 /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 

@@ -1,7 +1,7 @@
 /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 
@@ -40,7 +40,7 @@
 
 class PdfPage;
 
-class PopplerDocument : public DesQDocs::Document {
+class PopplerDocument : public PdfWidget::Document {
 	Q_OBJECT;
 
 	public:
@@ -65,13 +65,10 @@ class PopplerDocument : public DesQDocs::Document {
 		Poppler::Document *mPdfDoc;
 };
 
-class PdfPage : public DesQDocs::Page {
+class PdfPage : public PdfWidget::Page {
 
 	public:
-		PdfPage( int );
-
-		/* Way to store Poppler::Page */
-		void setPageData( void *data );
+		PdfPage( Poppler::Page *pg, int );
 
 		/* Size of the page */
 		QSizeF pageSize( qreal zoom = 1.0 ) const;
@@ -80,8 +77,8 @@ class PdfPage : public DesQDocs::Page {
 		QImage thumbnail() const;
 
 		/* Render and return a page */
-		QImage render( QSize, DesQDocs::RenderOptions ) const;
-		QImage render( qreal zoomFactor, DesQDocs::RenderOptions ) const;
+		QImage render( QSize, PdfWidget::RenderOptions ) const;
+		QImage render( qreal zoomFactor, PdfWidget::RenderOptions ) const;
 
 		/* Page Text */
 		QString pageText() const;
@@ -90,7 +87,7 @@ class PdfPage : public DesQDocs::Page {
 		QString text( QRectF ) const;
 
 		/* Search for @query in @pageNo or all pages */
-		QList<QRectF> search( QString query, DesQDocs::RenderOptions ) const;
+		QList<QRectF> search( QString query, PdfWidget::RenderOptions ) const;
 
 	private:
 		Poppler::Page *m_page;

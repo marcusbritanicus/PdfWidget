@@ -1,7 +1,7 @@
 /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 
@@ -29,7 +29,7 @@
 
 #include "PopplerDocument.hpp"
 
-PopplerDocument::PopplerDocument( QString pdfPath ) : DesQDocs::Document( pdfPath ) {
+PopplerDocument::PopplerDocument( QString pdfPath ) : PdfWidget::Document( pdfPath ) {
 
 	mPdfDoc = nullptr;
 };
@@ -61,8 +61,7 @@ void PopplerDocument::setPassword( QString password ) {
 
 	for( int i = 0; i < mPdfDoc->numPages(); i++ ) {
 		Poppler::Page *p = mPdfDoc->page( i );
-		PdfPage *page = new PdfPage( i );
-		page->setPageData( p );
+		PdfPage *page = new PdfPage( p, i );
 		mPages.append( page );
 
 		emit loading( 1.0 * i / mPdfDoc->numPages() * 100.0 );
@@ -141,8 +140,7 @@ void PopplerDocument::load() {
 
 	for( int i = 0; i < mPdfDoc->numPages(); i++ ) {
 		Poppler::Page *p = mPdfDoc->page( i );
-		PdfPage *page = new PdfPage( i );
-		page->setPageData( p );
+		PdfPage *page = new PdfPage( p, i );
 		mPages.append( page );
 
 		emit loading( 1.0 * i / mPdfDoc->numPages() * 100.0 );
@@ -166,14 +164,9 @@ void PopplerDocument::close() {
 };
 
 
-PdfPage::PdfPage( int pgNo ) : Page( pgNo ) {
+PdfPage::PdfPage( Poppler::Page *pg, int pgNo ) : Page( pgNo ) {
 
-	// Nothing much to be done here
-};
-
-void PdfPage::setPageData( void *data ) {
-
-	m_page = static_cast<Poppler::Page *>( data );
+	m_page = pg;
 };
 
 QSizeF PdfPage::pageSize( qreal zoom ) const {
@@ -186,7 +179,7 @@ QImage PdfPage::thumbnail() const {
 	return m_page->thumbnail();
 };
 
-QImage PdfPage::render( QSize pSize, DesQDocs::RenderOptions opts ) const {
+QImage PdfPage::render( QSize pSize, PdfWidget::RenderOptions opts ) const {
 
 	qreal wZoom = 1.0 * pSize.width() / m_page->pageSizeF().width();
 	qreal hZoom = 1.0 * pSize.height() / m_page->pageSizeF().height();
@@ -194,7 +187,7 @@ QImage PdfPage::render( QSize pSize, DesQDocs::RenderOptions opts ) const {
 	return m_page->renderToImage( 72 * wZoom, 72 * hZoom, -1, -1, -1, -1, ( Poppler::Page::Rotation )opts.rotation() );
 };
 
-QImage PdfPage::render( qreal zoomFactor, DesQDocs::RenderOptions opts ) const {
+QImage PdfPage::render( qreal zoomFactor, PdfWidget::RenderOptions opts ) const {
 
 	return m_page->renderToImage( 72 * zoomFactor, 72 * zoomFactor, -1, -1, -1, -1, ( Poppler::Page::Rotation )opts.rotation() );
 };
@@ -209,7 +202,7 @@ QString PdfPage::text( QRectF rect ) const {
 	return m_page->text( rect );
 };
 
-QList<QRectF> PdfPage::search( QString query, DesQDocs::RenderOptions opts ) const {
+QList<QRectF> PdfPage::search( QString query, PdfWidget::RenderOptions opts ) const {
 
 	return m_page->search(
 		query,																						// Search text

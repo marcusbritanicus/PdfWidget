@@ -34,7 +34,7 @@
 
 #include "Document.hpp"
 
-namespace DesQDocs {
+namespace PdfWidget {
 
     class Document;
     class Navigation;

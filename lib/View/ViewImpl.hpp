@@ -34,13 +34,13 @@
 #include <QPointer>
 #include <QtWidgets/private/qabstractscrollarea_p.h>
 
-namespace DesQDocs {
+namespace PdfWidget {
     class Renderer;
     class Document;
 
     class ViewPrivate : public QAbstractScrollAreaPrivate {
 
-        Q_DECLARE_PUBLIC( DesQDocs::View );
+        Q_DECLARE_PUBLIC( PdfWidget::View );
 
         public:
             ViewPrivate();
@@ -66,14 +66,14 @@ namespace DesQDocs {
             DocumentLayout calculateDocumentLayout() const;
             void updateDocumentLayout();
 
-            QPointer<DesQDocs::Document> m_document = nullptr;
-            DesQDocs::Navigation* m_pageNavigation = nullptr;
-            DesQDocs::Renderer *m_pageRenderer = nullptr;
+            QPointer<PdfWidget::Document> m_document = nullptr;
+            PdfWidget::Navigation* m_pageNavigation = nullptr;
+            PdfWidget::Renderer *m_pageRenderer = nullptr;
 
             View::PageMode m_pageMode;
             View::ZoomMode m_zoomMode;
             qreal m_zoomFactor;
-            DesQDocs::RenderOptions m_renderOpts;
+            PdfWidget::RenderOptions m_renderOpts;
 
             int m_pageSpacing;
             QMargins m_documentMargins;
@@ -92,4 +92,4 @@ namespace DesQDocs {
     };
 }
 
-Q_DECLARE_TYPEINFO( DesQDocs::ViewPrivate::DocumentLayout, Q_MOVABLE_TYPE );
+Q_DECLARE_TYPEINFO( PdfWidget::ViewPrivate::DocumentLayout, Q_MOVABLE_TYPE );

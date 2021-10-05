@@ -32,23 +32,23 @@
 
 #include <QPointer>
 
-DesQDocs::Navigation::Navigation( QObject *parent ) : QObject( *new NavigationPrivate, parent ) {
+PdfWidget::Navigation::Navigation( QObject *parent ) : QObject( *new NavigationPrivate, parent ) {
 
 }
 
-DesQDocs::Navigation::~Navigation() {
+PdfWidget::Navigation::~Navigation() {
 }
 
-DesQDocs::Document* DesQDocs::Navigation::document() const {
+PdfWidget::Document* PdfWidget::Navigation::document() const {
 
-    Q_D( const DesQDocs::Navigation );
+    Q_D( const PdfWidget::Navigation );
 
     return d->m_document;
 };
 
-void DesQDocs::Navigation::setDocument( Document *document ) {
+void PdfWidget::Navigation::setDocument( Document *document ) {
 
-    Q_D( DesQDocs::Navigation );
+    Q_D( PdfWidget::Navigation );
 
     if ( d->m_document == document )
         return;
@@ -65,16 +65,16 @@ void DesQDocs::Navigation::setDocument( Document *document ) {
     d->update();
 }
 
-int DesQDocs::Navigation::currentPage() const {
+int PdfWidget::Navigation::currentPage() const {
 
-    Q_D( const DesQDocs::Navigation );
+    Q_D( const PdfWidget::Navigation );
 
     return d->m_currentPage;
 }
 
-void DesQDocs::Navigation::setCurrentPage( int newPage ) {
+void PdfWidget::Navigation::setCurrentPage( int newPage ) {
 
-    Q_D( DesQDocs::Navigation );
+    Q_D( PdfWidget::Navigation );
 
     if ( newPage < 0 || newPage >= d->m_pageCount )
         return;
@@ -88,35 +88,35 @@ void DesQDocs::Navigation::setCurrentPage( int newPage ) {
     d->updatePrevNext();
 }
 
-int DesQDocs::Navigation::pageCount() const {
+int PdfWidget::Navigation::pageCount() const {
 
-    Q_D( const DesQDocs::Navigation );
+    Q_D( const PdfWidget::Navigation );
     return d->m_pageCount;
 }
 
-bool DesQDocs::Navigation::canGoToPreviousPage() const {
+bool PdfWidget::Navigation::canGoToPreviousPage() const {
 
-    Q_D( const DesQDocs::Navigation );
+    Q_D( const PdfWidget::Navigation );
     return d->m_canGoToPreviousPage;
 }
 
-bool DesQDocs::Navigation::canGoToNextPage() const {
+bool PdfWidget::Navigation::canGoToNextPage() const {
 
-    Q_D( const DesQDocs::Navigation );
+    Q_D( const PdfWidget::Navigation );
     return d->m_canGoToNextPage;
 }
 
-void DesQDocs::Navigation::goToPreviousPage() {
+void PdfWidget::Navigation::goToPreviousPage() {
 
-    Q_D( DesQDocs::Navigation );
+    Q_D( PdfWidget::Navigation );
 
     if ( d->m_currentPage > 0 )
         setCurrentPage( d->m_currentPage - 1 );
 }
 
-void DesQDocs::Navigation::goToNextPage() {
+void PdfWidget::Navigation::goToNextPage() {
 
-    Q_D( DesQDocs::Navigation );
+    Q_D( PdfWidget::Navigation );
 
     if ( d->m_currentPage < d->m_pageCount - 1 )
         setCurrentPage( d->m_currentPage + 1 );

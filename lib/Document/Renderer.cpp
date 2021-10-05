@@ -31,7 +31,7 @@
 #include "RendererImpl.hpp"
 #include "Document.hpp"
 
-RenderTask::RenderTask( DesQDocs::Page *pg, QSize imgSz, DesQDocs::RenderOptions opts, qint64 id ) {
+RenderTask::RenderTask( PdfWidget::Page *pg, QSize imgSz, PdfWidget::RenderOptions opts, qint64 id ) {
 
     mPage = pg;
     mImgSize = imgSz;
@@ -73,12 +73,12 @@ void RenderTask::run() {
         emit imageReady( mPage->pageNo(), img, mId );
 };
 
-DesQDocs::Renderer::Renderer( QObject *parent ) : QObject( parent ) {
+PdfWidget::Renderer::Renderer( QObject *parent ) : QObject( parent ) {
 
     mDoc = nullptr;
 };
 
-void DesQDocs::Renderer::setDocument( DesQDocs::Document *doc ) {
+void PdfWidget::Renderer::setDocument( PdfWidget::Document *doc ) {
 
     if ( mDoc == doc )
         return;
@@ -117,7 +117,7 @@ void DesQDocs::Renderer::setDocument( DesQDocs::Document *doc ) {
     validFrom = QDateTime::currentDateTime().toSecsSinceEpoch();
 };
 
-QImage DesQDocs::Renderer::requestPage( int pg, QSize imgSz, DesQDocs::RenderOptions opts ) {
+QImage PdfWidget::Renderer::requestPage( int pg, QSize imgSz, PdfWidget::RenderOptions opts ) {
 
     if ( pg >= mDoc->pageCount() )
         return QImage();
@@ -188,7 +188,7 @@ QImage DesQDocs::Renderer::requestPage( int pg, QSize imgSz, DesQDocs::RenderOpt
     RenderTask *task = new RenderTask( mDoc->page( pg ), imgSz, opts, QDateTime::currentDateTime().toSecsSinceEpoch() );
     task->setAutoDelete( false );
 
-    connect( task, &RenderTask::imageReady, this, &DesQDocs::Renderer::validateImage );
+    connect( task, &RenderTask::imageReady, this, &PdfWidget::Renderer::validateImage );
 
     /* Start rendering if there is an available slot */
     if ( requests.count() < requestLimit ) {
@@ -207,7 +207,7 @@ QImage DesQDocs::Renderer::requestPage( int pg, QSize imgSz, DesQDocs::RenderOpt
     return ( img.isNull() ? img : img.scaled( imgSz, Qt::IgnoreAspectRatio, Qt::SmoothTransformation ) );
 };
 
-void DesQDocs::Renderer::reload() {
+void PdfWidget::Renderer::reload() {
 
     /* The document was reloaded: Clear the page cache */
     pageCache.clear();
@@ -245,7 +245,7 @@ void DesQDocs::Renderer::reload() {
     validFrom = QDateTime::currentDateTime().toSecsSinceEpoch();
 };
 
-void DesQDocs::Renderer::validateImage( int pg, QImage img, qint64 id ) {
+void PdfWidget::Renderer::validateImage( int pg, QImage img, qint64 id ) {
 
     requests.removeAll( pg );
     requestCache.remove( pg );

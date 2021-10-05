@@ -63,15 +63,15 @@ void MiniPdf::setWindowProperties() {
 
 void MiniPdf::setupConnections() {
 
-	// Setup various connections to slots
+	/** Setup various connections to slots */
 	connect( Tabs, SIGNAL( tabCloseRequested( int ) ), this, SLOT( closeTab( int ) ) );
 	connect( Tabs, SIGNAL( open() ), this, SLOT( openFiles() ) );
 
-	// Distraction-free mode
-	//QAction *dfreeAct = new QAction( QIcon( ":/icons/info.png" ), "D-Free Mode", this );
-	//dfreeAct->setShortcut( QKeySequence( "Ctrl+Shift+D" ) );
-	//connect( dfreeAct, SIGNAL( triggered() ), this, SLOT( dfreeMode() ) );
-	//addAction( dfreeAct );
+	/** Distraction-free mode */
+	QAction *dfreeAct = new QAction( QIcon( ":/icons/info.png" ), "D-Free Mode", this );
+	dfreeAct->setShortcut( QKeySequence( "Ctrl+Shift+D" ) );
+	connect( dfreeAct, SIGNAL( triggered() ), this, SLOT( dfreeMode() ) );
+	addAction( dfreeAct );
 };
 
 void MiniPdf::addToRecentList( QString file ) {
@@ -136,23 +136,13 @@ void MiniPdf::loadFiles() {
 		if ( openedFiles.contains( filesQueue[ i ] ) )
 			continue;
 
-		PdfView *view = new PdfView( this );
-		view->loadPdfDocument( filesQueue[ i ], PdfView::PopplerRenderBackend );
-
-		/* Zoom In */
-		QAction *zoomInAct = new QAction( view );
-		zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
-		connect( zoomInAct, SIGNAL( triggered() ), view, SLOT( slotZoomIn() ) );
-		view->addAction( zoomInAct );
-
-		/* Zoom Out */
-		QAction *zoomOutAct = new QAction( view );
-		zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
-		connect( zoomOutAct, SIGNAL( triggered() ), view, SLOT( slotZoomOut() ) );
-		view->addAction( zoomOutAct );
+		qDebug() << "Loading PDF:" << filesQueue[ i ];
+		PdfWidget::View *view = new PdfWidget::View( this );
 
 		Tabs->addTab( view, QIcon::fromTheme( "application-pdf", QIcon( ":/icons/pdf.png" ) ), baseName( filesQueue[ i ] ) );
 		openedFiles << filesQueue[ i ];
+
+		view->loadDocument( filesQueue[ i ], PdfWidget::View::MuPdfRenderBackend );
 
 		/* Add the just opened file to the list */
 		addToRecentList( filesQueue[ i ] );
@@ -161,12 +151,12 @@ void MiniPdf::loadFiles() {
 	filesQueue.clear();
 
 	Tabs->setCurrentIndex( Tabs->count() - 1 );
-	qobject_cast<PdfView*>( Tabs->currentWidget() )->setFocus();
+	qobject_cast<PdfWidget::View*>( Tabs->currentWidget() )->setFocus();
 };
 
 void MiniPdf::reload() {
 
-	qobject_cast<PdfView*>( Tabs->currentWidget() )->reload();
+	qobject_cast<PdfWidget::View*>( Tabs->currentWidget() )->document()->reload();
 };
 
 void MiniPdf::printFile() {
@@ -202,7 +192,7 @@ void MiniPdf::closeTab() {
 	Tabs->removeTab( Tabs->currentIndex() );
 
 	if ( Tabs->count() )
-		qobject_cast<PdfView*>( Tabs->currentWidget() )->setFocus();
+		qobject_cast<PdfWidget::View*>( Tabs->currentWidget() )->setFocus();
 
 	else
 		openRecentFiles();
@@ -224,7 +214,7 @@ void MiniPdf::closeTab( int index ) {
 	Tabs->removeTab( index );
 
 	if ( Tabs->count() )
-		qobject_cast<PdfView*>( Tabs->currentWidget() )->setFocus();
+		qobject_cast<PdfWidget::View*>( Tabs->currentWidget() )->setFocus();
 
 	else
 		openRecentFiles();
@@ -241,26 +231,24 @@ void MiniPdf::closeAllTabs() {
 
 void MiniPdf::dfreeMode() {
 
-	//if ( Tabs->currentIndex() == recentIdx )
-		//return;
+	if ( Tabs->currentIndex() == recentIdx )
+		return;
 
-	/* Hide the main window */
-	//hide();
+	/** Hide the main window */
+	// hide();
 
-	/* Open the distraction-free widget */
-	//PdfView *view = qobject_cast<PdfView *>( Tabs->currentWidget() );
-	//ed->setParent( 0 );
-	//ed->showFullScreen();
+	/** Open the distraction-free widget */
+	PdfWidget::View *view = qobject_cast<PdfWidget::View *>( Tabs->currentWidget() );
+	view->setParent( nullptr );
+	view->showFullScreen();
 
-	//int cIdx = Tabs->currentIndex();
-	//Tabs->removeTab( cIdx );
+	// int cIdx = Tabs->currentIndex();
+	// Tabs->removeTab( cIdx );
 
-	//ed->exec();
+	// Tabs->insertTab( cIdx, ed, getPixmap( ed->fileName() ), baseName( ed->fileName() ) );
 
-	//Tabs->insertTab( cIdx, ed, getPixmap( ed->fileName() ), baseName( ed->fileName() ) );
-
-	/* Show the main window on exit */
-	//show();
+	/** Show the main window on exit */
+	// show();
 };
 
 void MiniPdf::messageReciever( QString msg ) {
@@ -275,25 +263,14 @@ void MiniPdf::messageReciever( QString msg ) {
 			if ( openedFiles.contains( file ) )
 				continue;
 
-			PdfView *view = new PdfView( this );
-			view->loadPdfDocument( file, PdfView::MuPdfRenderBackend );
-
-			/* Zoom In */
-			QAction *zoomInAct = new QAction( view );
-			zoomInAct->setShortcut( QKeySequence( "Ctrl++" ) );
-			connect( zoomInAct, SIGNAL( triggered() ), view, SLOT( slotZoomIn() ) );
-			view->addAction( zoomInAct );
-
-			/* Zoom Out */
-			QAction *zoomOutAct = new QAction( view );
-			zoomOutAct->setShortcut( QKeySequence( "Ctrl+-" ) );
-			connect( zoomOutAct, SIGNAL( triggered() ), view, SLOT( slotZoomOut() ) );
-			view->addAction( zoomOutAct );
+			PdfWidget::View *view = new PdfWidget::View( this );
 
 			int idx = Tabs->addTab( view, QIcon( getPixmap( file ) ) , baseName( file ) );
+			view->loadDocument( file, PdfWidget::View::MuPdfRenderBackend );
+
 			Tabs->setCurrentIndex( idx );
 
-			qobject_cast<PdfView*>( Tabs->currentWidget() )->setFocus();
+			qobject_cast<PdfWidget::View*>( Tabs->currentWidget() )->setFocus();
 
 			/* Add the just opened file to the list */
 			addToRecentList( file );

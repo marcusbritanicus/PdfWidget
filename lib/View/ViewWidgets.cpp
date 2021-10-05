@@ -1,7 +1,7 @@
 /*
     *
-    * This file is a part of DesQDocs.
-    * DesQDocs is the default document viewer for the DesQ Suite
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
     * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
     *
 
@@ -356,7 +356,7 @@ void PageWidget::mouseReleaseEvent( QMouseEvent *mEvent ) {
 
 		else if ( textRect.contains( mEvent->localPos() ) ) {
 			QInputDialog *inDlg = new QInputDialog( this );
-			inDlg->setWindowTitle( "DesQDocs | Goto Page" );
+			inDlg->setWindowTitle( "PdfWidget | Goto Page" );
 			inDlg->setLabelText( "Enter the page to which you want to jump:" );
 			inDlg->setInputMode( QInputDialog::IntInput );
 			inDlg->setIntRange( 1, maxPages );

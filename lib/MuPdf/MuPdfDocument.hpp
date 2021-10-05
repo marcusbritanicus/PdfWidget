@@ -1,84 +1,108 @@
 /*
-	*
-	* MuPdfDocument.hpp - MuPDF Document Qt interface header
-	*
+    *
+    * This file is a part of PdfWidget.
+    * PdfWidget is the default document viewer for the DesQ Suite
+    * Copyright 2019-2021 Britanicus <marcusbritanicus@gmail.com>
+    *
+
+    *
+    * This program is free software; you can redistribute it and/or modify
+    * it under the terms of the GNU General Public License as published by
+    * the Free Software Foundation; either version 2 of the License, or
+    * at your option, any later version.
+    *
+
+    *
+    * This program is distributed in the hope that it will be useful,
+    * but WITHOUT ANY WARRANTY; without even the implied warranty of
+    * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    * GNU General Public License for more details.
+    *
+
+    *
+    * You should have received a copy of the GNU General Public License
+    * along with this program; if not, write to the Free Software
+    * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+    * MA 02110-1301, USA.
+    *
 */
 
 #pragma once
 
 #include <QtCore>
 #include <QtGui>
-
-#if QT_VERSION >= 0x050000
-	#include <QtWidgets>
-#endif
+#include <QtWidgets>
 
 #include "Document.hpp"
+#include "RenderOptions.hpp"
 
 extern "C" {
-	#include "mupdf/fitz.h"
+	#include <mupdf/fitz.h>
 }
 
-typedef fz_page MuPage;
+class MuPage;
 
-typedef QList<MuPage*> MuPages;
-
-class MuPdfDocument : public PdfDocument {
-	Q_OBJECT
+class MuPdfDocument : public PdfWidget::Document {
+	Q_OBJECT;
 
 	public:
-		MuPdfDocument( QString );
+		MuPdfDocument( QString pdfPath );
 
-		bool passwordNeeded() const;
+		/* Set a password */
 		void setPassword( QString password );
 
-		QString pdfName() const;
-		QString pdfPath() const;
+		/* Pdf Info / Metadata */
+		QString title() const;
+		QString author() const;
+		QString creator() const;
+		QString producer() const;
+		QString created() const;
 
-		int pageCount() const;
-		QSizeF pageSize( int pageNo ) const;
-
-		void reload();
-
-		QImage renderPage( int ) const;
-		QImage renderPageForWidth( int, qreal ) const;
-		QImage renderPageForHeight( int, qreal ) const;
-
-		QString pageText( int pageNo ) const;
-		QString text( int pageNo, QRectF ) const;
-
-		qreal zoomForWidth( int pageNo, qreal width ) const;
-		qreal zoomForHeight( int pageNo, qreal width ) const;
-
-		qreal zoom() const {
-
-			return mZoom;
-		};
-
-		void setZoom( qreal zoom ) {
-
-			mZoom = zoom;
-		};
-
-		bool isReady() const {
-
-			return mLoaded;
-		}
+	public Q_SLOTS:
+		void load();
+		void close();
 
 	private:
-		QString mPdfPath;
-
+		/* Pointer to our actual mupdf document */
 		fz_context *mCtx;
 		fz_document *mFzDoc;
 
-		int mPages;
-		MuPages mPageList;
+		int mPageCount;
 
-		qreal mZoom;
+	Q_SIGNALS:
+		void passwordChanged();
+		void passwordRequired();
+		void reloadDocument();
+		void statusChanged( Document::Status status );
+		void pageCountChanged( int pageCount );
+};
 
-		bool mLoaded;
-		bool mPassNeeded;
+class MuPage : public PdfWidget::Page {
 
-	public Q_SLOTS:
-		void loadDocument();
+	public:
+		MuPage( fz_context *ctx, fz_page *pg, int );
+		~MuPage();
+
+		/* Size of the page */
+		QSizeF pageSize( qreal zoom = 1.0 ) const;
+
+		/* Thumbnail of the page */
+		QImage thumbnail() const;
+
+		/* Render and return a page */
+		QImage render( QSize, PdfWidget::RenderOptions ) const;
+		QImage render( qreal zoomFactor, PdfWidget::RenderOptions ) const;
+
+		/* Page Text */
+		QString pageText() const;
+
+		/* Text of a Selection rectangle */
+		QString text( QRectF ) const;
+
+		/* Search for @query in @pageNo or all pages */
+		QList<QRectF> search( QString query, PdfWidget::RenderOptions ) const;
+
+	private:
+		fz_page *mPage;
+		fz_context *mCtx;
 };

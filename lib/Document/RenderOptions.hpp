@@ -31,7 +31,7 @@
 
 #include <QtCore/QObject>
 
-namespace DesQDocs {
+namespace PdfWidget {
     class RenderOptions {
 
         public:
@@ -99,4 +99,4 @@ namespace DesQDocs {
     };
 };
 
-Q_DECLARE_METATYPE( DesQDocs::RenderOptions );
+Q_DECLARE_METATYPE( PdfWidget::RenderOptions );

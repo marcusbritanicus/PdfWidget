@@ -37,7 +37,7 @@
 	*
 */
 
-DesQDocs::Document::Document( QString path ) : QObject() {
+PdfWidget::Document::Document( QString path ) : QObject() {
 
 	mZoom = 1.0;
 	mStatus = Null;
@@ -59,32 +59,32 @@ DesQDocs::Document::Document( QString path ) : QObject() {
 	);
 };
 
-QString DesQDocs::Document::fileName() const {
+QString PdfWidget::Document::fileName() const {
 
 	return DesQ::Utils::baseName( mDocPath );
 };
 
-QString DesQDocs::Document::filePath() const {
+QString PdfWidget::Document::filePath() const {
 
 	return DesQ::Utils::dirName( mDocPath );
 };
 
-bool DesQDocs::Document::passwordNeeded() const {
+bool PdfWidget::Document::passwordNeeded() const {
 
 	return mPassNeeded;
 };
 
-int DesQDocs::Document::pageCount() const {
+int PdfWidget::Document::pageCount() const {
 
 	return mPages.count();
 };
 
-QSizeF DesQDocs::Document::pageSize( int pageNo ) const {
+QSizeF PdfWidget::Document::pageSize( int pageNo ) const {
 
 	return mPages.at( pageNo )->pageSize() * mZoom;
 };
 
-void DesQDocs::Document::reload() {
+void PdfWidget::Document::reload() {
 
 	mStatus = Null;
 	mPages.clear();
@@ -97,12 +97,12 @@ void DesQDocs::Document::reload() {
 	}
 };
 
-DesQDocs::Document::Status DesQDocs::Document::status() const {
+PdfWidget::Document::Status PdfWidget::Document::status() const {
 
 	return mStatus;
 };
 
-QImage DesQDocs::Document::renderPage( int pageNo, QSize size, DesQDocs::RenderOptions opts ) const {
+QImage PdfWidget::Document::renderPage( int pageNo, QSize size, PdfWidget::RenderOptions opts ) const {
 
 	if ( pageNo >= mPages.count() )
 		return QImage();
@@ -110,7 +110,7 @@ QImage DesQDocs::Document::renderPage( int pageNo, QSize size, DesQDocs::RenderO
 	return mPages.at( pageNo )->render( size, opts );
 };
 
-QImage DesQDocs::Document::renderPage( int pageNo, qreal zoomFactor, DesQDocs::RenderOptions opts ) const {
+QImage PdfWidget::Document::renderPage( int pageNo, qreal zoomFactor, PdfWidget::RenderOptions opts ) const {
 
 	if ( pageNo >= mPages.count() )
 		return QImage();
@@ -118,12 +118,12 @@ QImage DesQDocs::Document::renderPage( int pageNo, qreal zoomFactor, DesQDocs::R
 	return mPages.at( pageNo )->render( zoomFactor, opts );
 };
 
-DesQDocs::Pages DesQDocs::Document::pages() const {
+PdfWidget::Pages PdfWidget::Document::pages() const {
 
 	return mPages;
 };
 
-DesQDocs::Page* DesQDocs::Document::page( int pageNo ) const {
+PdfWidget::Page* PdfWidget::Document::page( int pageNo ) const {
 
 	if ( pageNo >= mPages.count() )
 		return nullptr;
@@ -131,7 +131,7 @@ DesQDocs::Page* DesQDocs::Document::page( int pageNo ) const {
 	return mPages.at( pageNo );
 };
 
-QImage DesQDocs::Document::pageThumbnail( int pageNo ) const {
+QImage PdfWidget::Document::pageThumbnail( int pageNo ) const {
 
 	if ( pageNo >= mPages.count() )
 		return QImage();
@@ -139,17 +139,17 @@ QImage DesQDocs::Document::pageThumbnail( int pageNo ) const {
 	return mPages.at( pageNo )->thumbnail();
 };
 
-QString DesQDocs::Document::pageText( int pageNo ) const {
+QString PdfWidget::Document::pageText( int pageNo ) const {
 
 	return mPages.at( pageNo )->text( QRectF() );
 };
 
-QString DesQDocs::Document::text( int pageNo, QRectF rect ) const {
+QString PdfWidget::Document::text( int pageNo, QRectF rect ) const {
 
 	return mPages.at( pageNo )->text( rect );
 };
 
-QList<QRectF> DesQDocs::Document::search( QString query, int pageNo, DesQDocs::RenderOptions opts ) const {
+QList<QRectF> PdfWidget::Document::search( QString query, int pageNo, PdfWidget::RenderOptions opts ) const {
 
 	searchRects.clear();
 
@@ -162,7 +162,7 @@ QList<QRectF> DesQDocs::Document::search( QString query, int pageNo, DesQDocs::R
 	return searchRects;
 };
 
-qreal DesQDocs::Document::zoomForWidth( int pageNo, qreal width ) const {
+qreal PdfWidget::Document::zoomForWidth( int pageNo, qreal width ) const {
 
 	if ( pageNo >= mPages.count() )
 		return 0.0;
@@ -170,7 +170,7 @@ qreal DesQDocs::Document::zoomForWidth( int pageNo, qreal width ) const {
 	return 1.0 * width / mPages.at( pageNo )->pageSize().width();
 };
 
-qreal DesQDocs::Document::zoomForHeight( int pageNo, qreal height ) const {
+qreal PdfWidget::Document::zoomForHeight( int pageNo, qreal height ) const {
 
 	if ( pageNo >= mPages.count() )
 		return 0.0;
@@ -178,7 +178,7 @@ qreal DesQDocs::Document::zoomForHeight( int pageNo, qreal height ) const {
 	return 1.0 * height / mPages.at( pageNo )->pageSize().height();
 };
 
-void DesQDocs::Document::setZoom( qreal zoom ) {
+void PdfWidget::Document::setZoom( qreal zoom ) {
 
 	mZoom = zoom;
 };
@@ -189,12 +189,12 @@ void DesQDocs::Document::setZoom( qreal zoom ) {
 	*
 */
 
-DesQDocs::Page::Page( int pgNo ) {
+PdfWidget::Page::Page( int pgNo ) {
 
 	mPageNo = pgNo;
 };
 
-int DesQDocs::Page::pageNo() {
+int PdfWidget::Page::pageNo() {
 
 	return mPageNo;
 };
