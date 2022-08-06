@@ -1,6 +1,8 @@
 # PdfWidget
 ## A nascent PDF view written based on Qt
 
+## This project is now archived. It is superseded by [QDocumentView](https://gitlab.com/marcusbritanicus/qdocumentview.git) project. QDV supports PDF and DjVu file formats as of today, and can easily be extended to support multiple file formats. Thank you all for your love and support. :slightly_smiling_face:
+
 Its very few features are
 - Two render backends: MuPdf and Poppler
 - Encryption support
